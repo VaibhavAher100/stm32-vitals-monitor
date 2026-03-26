@@ -1,0 +1,240 @@
+#include <stdint.h>
+
+/* ── RCC ─────────────────────────────────────────── */
+#define RCC_AHB2ENR    (*((volatile uint32_t*)0x4002104C))
+#define RCC_APB1ENR1   (*((volatile uint32_t*)0x40021058))
+
+/* ── GPIOA — UART ────────────────────────────────── */
+#define GPIOA_MODER    (*((volatile uint32_t*)0x48000000))
+#define GPIOA_AFRL     (*((volatile uint32_t*)0x48000020))
+
+/* ── GPIOB — I2C ─────────────────────────────────── */
+#define GPIOB_MODER    (*((volatile uint32_t*)0x48000400))
+#define GPIOB_OTYPER   (*((volatile uint32_t*)0x48000404))
+#define GPIOB_OSPEEDR  (*((volatile uint32_t*)0x48000408))
+#define GPIOB_AFRH     (*((volatile uint32_t*)0x48000424))
+
+/* ── USART2 ──────────────────────────────────────── */
+#define USART2_CR1     (*((volatile uint32_t*)0x40004400))
+#define USART2_BRR     (*((volatile uint32_t*)0x4000440C))
+#define USART2_ISR     (*((volatile uint32_t*)0x4000441C))
+#define USART2_TDR     (*((volatile uint32_t*)0x40004428))
+
+/* ── I2C1 ────────────────────────────────────────── */
+#define I2C1_CR1       (*((volatile uint32_t*)0x40005400))
+#define I2C1_CR2       (*((volatile uint32_t*)0x40005404))
+#define I2C1_TIMINGR   (*((volatile uint32_t*)0x40005410))
+#define I2C1_ISR       (*((volatile uint32_t*)0x40005418))
+#define I2C1_TXDR      (*((volatile uint32_t*)0x40005428))
+#define I2C1_RXDR      (*((volatile uint32_t*)0x40005424))
+
+/* ── TMP117 ──────────────────────────────────────── */
+#define TMP117_ADDR    0x49U
+#define TMP117_REG_TEMP 0x00U
+#define TMP117_REG_ID   0x0FU
+
+static void delay(volatile uint32_t n) { while(n--) {} }
+
+/* ── UART ────────────────────────────────────────── */
+static void uart_init(void)
+{
+    RCC_AHB2ENR  |= (1U << 0);
+    RCC_APB1ENR1 |= (1U << 17);
+    GPIOA_MODER  &= ~(3U << 4);
+    GPIOA_MODER  |=  (2U << 4);
+    GPIOA_AFRL   &= ~(0xFU << 8);
+    GPIOA_AFRL   |=  (7U   << 8);
+    USART2_BRR    = 417U;
+    USART2_CR1   |= (1U << 3);
+    USART2_CR1   |= (1U << 0);
+}
+
+static void uart_char(char c)
+{
+    while(!(USART2_ISR & (1U << 7))) {}
+    USART2_TDR = (uint8_t)c;
+}
+
+static void uart_str(const char *s)
+{
+    while(*s) uart_char(*s++);
+}
+
+static void uart_int(int32_t v)
+{
+    char buf[12];
+    uint8_t i = 0;
+    if(v < 0) { uart_char('-'); v = -v; }
+    if(v == 0) { uart_char('0'); return; }
+    while(v > 0) { buf[i++] = '0' + (v % 10); v /= 10; }
+    while(i > 0) uart_char(buf[--i]);
+}
+
+/* ── I2C ─────────────────────────────────────────── */
+static void i2c_init(void)
+{
+    /* Enable clocks */
+    RCC_AHB2ENR  |= (1U << 1);   /* GPIOB */
+    RCC_APB1ENR1 |= (1U << 21);  /* I2C1  */
+    delay(10);
+
+    /* PB8 and PB9 → Alternate Function mode */
+    GPIOB_MODER &= ~(3U << 16);
+    GPIOB_MODER |=  (2U << 16);  /* PB8 AF */
+    GPIOB_MODER &= ~(3U << 18);
+    GPIOB_MODER |=  (2U << 18);  /* PB9 AF */
+
+    /* Open-drain — required by I2C spec */
+    GPIOB_OTYPER |= (1U << 8);
+    GPIOB_OTYPER |= (1U << 9);
+
+    /* High speed */
+    GPIOB_OSPEEDR |= (3U << 16);
+    GPIOB_OSPEEDR |= (3U << 18);
+
+    /* AF4 = I2C1 for PB8 and PB9 */
+    GPIOB_AFRH &= ~(0xFFU << 0);
+    GPIOB_AFRH |=  (4U    << 0);  /* PB8 = AF4 */
+    GPIOB_AFRH |=  (4U    << 4);  /* PB9 = AF4 */
+
+    /* Disable I2C before configuring */
+    I2C1_CR1 &= ~(1U << 0);
+    delay(10);
+
+    /* Timing for 100kHz at 4MHz system clock */
+    I2C1_TIMINGR = 0x00100D14U;
+
+    /* Enable I2C1 */
+    I2C1_CR1 |= (1U << 0);
+    delay(10);
+}
+
+/* Write one register address to a device — sets pointer for next read */
+static uint8_t i2c_write_reg(uint8_t addr, uint8_t reg)
+{
+    volatile uint32_t timeout;
+
+    /* Wait for bus free */
+    timeout = 100000;
+    while((I2C1_ISR & (1U << 15)) && timeout--) {}
+    if(!timeout) { uart_str("ERR: bus busy\r\n"); return 1; }
+
+    /* Set address, write, 1 byte */
+    I2C1_CR2 = ((uint32_t)addr << 1) | (1U << 16);
+
+    /* START */
+    I2C1_CR2 |= (1U << 13);
+
+    /* Wait TXIS or NACK */
+    timeout = 100000;
+    while(!(I2C1_ISR & (1U << 1)) && timeout--)
+    {
+        if(I2C1_ISR & (1U << 4))  /* NACK received */
+        {
+            I2C1_CR2 |= (1U << 14);  /* STOP */
+            uart_str("ERR: NACK — wrong address or no device\r\n");
+            return 2;
+        }
+    }
+    if(!timeout) { uart_str("ERR: TXIS timeout\r\n"); return 1; }
+
+    I2C1_TXDR = reg;
+
+    /* Wait transfer complete */
+    timeout = 100000;
+    while(!(I2C1_ISR & (1U << 6)) && timeout--) {}
+
+    /* STOP */
+    I2C1_CR2 |= (1U << 14);
+    delay(5);
+    return 0;
+}
+
+/* Read 2 bytes from device after i2c_write_reg sets the register */
+static uint16_t i2c_read_2bytes(uint8_t addr)
+{
+    volatile uint32_t timeout;
+    uint16_t result = 0;
+
+    /* Set address, read, 2 bytes, autoend */
+    I2C1_CR2 = ((uint32_t)addr << 1) | (1U << 10) | (2U << 16) | (1U << 25);
+
+    /* START */
+    I2C1_CR2 |= (1U << 13);
+
+    /* Read byte 1 — MSB */
+    timeout = 100000;
+    while(!(I2C1_ISR & (1U << 2)) && timeout--) {}
+    if(!timeout) { uart_str("ERR: RX1 timeout\r\n"); return 0xFFFF; }
+    result = (uint16_t)(I2C1_RXDR << 8);
+
+    /* Read byte 2 — LSB */
+    timeout = 100000;
+    while(!(I2C1_ISR & (1U << 2)) && timeout--) {}
+    if(!timeout) { uart_str("ERR: RX2 timeout\r\n"); return 0xFFFF; }
+    result |= (uint16_t)I2C1_RXDR;
+
+    delay(5);
+    return result;
+}
+
+/* ── Main ────────────────────────────────────────── */
+int main(void)
+{
+    uart_init();
+    i2c_init();
+
+    uart_str("========================\r\n");
+    uart_str("I2C Address Scanner\r\n");
+    uart_str("========================\r\n");
+
+    /* Scan all 7-bit addresses 0x08 to 0x77 */
+    uint8_t found = 0;
+    for(uint8_t addr = 0x08; addr < 0x78; addr++)
+    {
+        volatile uint32_t timeout;
+
+        /* Wait bus free */
+        timeout = 10000;
+        while((I2C1_ISR & (1U << 15)) && timeout--) {}
+
+        /* Try address with 0 bytes — just probe */
+        I2C1_CR2 = ((uint32_t)addr << 1) | (0U << 16) | (1U << 25);
+        I2C1_CR2 |= (1U << 13);
+
+        /* Wait for STOP, NACK, or TC */
+        timeout = 10000;
+        while(timeout--)
+        {
+            uint32_t isr = I2C1_ISR;
+            if(isr & (1U << 4))  /* NACK */
+            {
+                I2C1_CR2 |= (1U << 14);
+                delay(100);
+                break;
+            }
+            if(isr & (1U << 5))  /* STOP detected */
+            {
+                /* Device responded */
+                uart_str("Found device at 0x");
+                uart_int(addr);
+                uart_str("\r\n");
+                found++;
+                delay(100);
+                break;
+            }
+        }
+        delay(200);
+    }
+
+    if(found == 0)
+    {
+        uart_str("No devices found\r\n");
+        uart_str("Check wiring\r\n");
+    }
+
+    uart_str("Scan complete\r\n");
+    uart_str("========================\r\n");
+
+    while(1) { delay(1000000); }
+}

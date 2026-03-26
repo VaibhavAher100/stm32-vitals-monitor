@@ -141,3 +141,18 @@ int main(void)
         delay(500000);
     }
 }
+```
+
+---
+
+Build with **Ctrl+B**. Drag `Core.bin` to NODE_L476RG. Open CoolTerm on COM7 at 9600. Press RESET.
+
+You should see:
+```
+========================
+STM32 Vitals Monitor
+UART OK
+========================
+Loop count: 0
+Loop count: 1
+Loop count: 2

@@ -16,3 +16,5 @@ firmware/Core/Release/
 # OS files
 .DS_Store
 Thumbs.db
+firmware/.metadata/
+docs/*.docx

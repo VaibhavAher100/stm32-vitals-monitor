@@ -1,10 +1,10 @@
-10:35:51 **** Incremental Build of configuration Debug for project Core ****
+13:48:12 **** Incremental Build of configuration Debug for project Core ****
 make -j18 all 
 arm-none-eabi-size  Core.elf 
    text	   data	    bss	    dec	    hex	filename
-    784	      0	   1568	   2352	    930	Core.elf
+   1264	      0	   1568	   2832	    b10	Core.elf
 Finished building: default.size.stdout
  
 
-10:35:51 Build Finished. 0 errors, 0 warnings. (took 146ms)
+13:48:12 Build Finished. 0 errors, 0 warnings. (took 165ms)
 

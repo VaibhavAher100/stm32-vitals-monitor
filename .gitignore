@@ -1,4 +1,5 @@
-# Build output
+
+firmware/.metadata/
 firmware/Core/Debug/
 firmware/Core/Release/
 *.o
@@ -8,13 +9,8 @@ firmware/Core/Release/
 *.hex
 *.map
 *.list
-
-# IDE files
-.settings/
-*.launch
-
-# OS files
-.DS_Store
-Thumbs.db
-firmware/.metadata/
+*.su
+*.cyclo
 docs/*.docx
+Thumbs.db
+.DS_Store

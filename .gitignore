@@ -1,0 +1,18 @@
+# Build output
+firmware/Core/Debug/
+firmware/Core/Release/
+*.o
+*.d
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+
+# IDE files
+.settings/
+*.launch
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,7 +1,4 @@
-
-firmware/.metadata/
-firmware/Core/Debug/
-firmware/Core/Release/
+# Build artifacts
 *.o
 *.d
 *.elf
@@ -9,8 +6,25 @@ firmware/Core/Release/
 *.hex
 *.map
 *.list
+*.lst
 *.su
 *.cyclo
+
+# STM32CubeIDE build output
+firmware/.metadata/
+firmware/Core/Debug/
+firmware/Core/Release/
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+*.launch
+.settings/
+
+# Docs generated
 docs/*.docx
+
+# OS
 Thumbs.db
 .DS_Store

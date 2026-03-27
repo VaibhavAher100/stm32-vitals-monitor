@@ -15,12 +15,20 @@ firmware/Core/Release/
 *.hex
 *.map
 *.list
+*.lst
 *.su
 *.cyclo
 
 # CubeIDE-generated makefiles
 *.mk
 objects.list
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+*.launch
+.settings/
 
 # Local docs (not for repo)
 docs/*.docx

@@ -1,7 +1,13 @@
 
+# STM32CubeIDE workspace & metadata
 firmware/.metadata/
+firmware/**/.settings/
+
+# Build outputs
 firmware/Core/Debug/
 firmware/Core/Release/
+
+# Compiled/linked artifacts
 *.o
 *.d
 *.elf
@@ -11,6 +17,14 @@ firmware/Core/Release/
 *.list
 *.su
 *.cyclo
+
+# CubeIDE-generated makefiles
+*.mk
+objects.list
+
+# Local docs (not for repo)
 docs/*.docx
+
+# OS artifacts
 Thumbs.db
 .DS_Store

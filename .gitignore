@@ -36,3 +36,4 @@ docs/*.docx
 # OS artifacts
 Thumbs.db
 .DS_Store
+CONTRIBUTING.md

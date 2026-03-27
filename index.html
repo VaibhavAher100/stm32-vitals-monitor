@@ -5,731 +5,692 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>STM32 Vitals Monitor — Vaibhav Aher</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0e1a;
-    --bg2: #0f1420;
-    --bg3: #151b2e;
-    --border: #1e2840;
-    --border2: #2a3550;
-    --text: #c8d4f0;
-    --text2: #7a90b8;
-    --text3: #4a5e80;
-    --green: #00d084;
-    --green2: #00a868;
-    --amber: #f0a020;
-    --blue: #4090ff;
-    --blue2: #2060d0;
-    --red: #ff4060;
-    --mono: 'JetBrains Mono', monospace;
-    --sans: 'Inter', sans-serif;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 15px;
-    line-height: 1.7;
-    overflow-x: hidden;
-  }
-
-  /* ── SCANLINE OVERLAY ── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.03) 2px,
-      rgba(0,0,0,0.03) 4px
-    );
-    pointer-events: none;
-    z-index: 1000;
-  }
-
-  /* ── HERO ── */
-  .hero {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 80px 48px;
-    position: relative;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .hero::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background:
-      radial-gradient(ellipse 60% 50% at 20% 50%, rgba(0,208,132,0.04) 0%, transparent 70%),
-      radial-gradient(ellipse 40% 60% at 80% 20%, rgba(64,144,255,0.05) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--green);
-    background: rgba(0,208,132,0.08);
-    border: 1px solid rgba(0,208,132,0.2);
-    padding: 4px 12px;
-    border-radius: 4px;
-    margin-bottom: 32px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .chip::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--green);
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.8); }
-  }
-
-  .hero h1 {
-    font-family: var(--mono);
-    font-size: clamp(32px, 5vw, 56px);
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-    margin-bottom: 16px;
-  }
-
-  .hero h1 span { color: var(--green); }
-
-  .hero-sub {
-    font-size: 18px;
-    color: var(--text2);
-    font-weight: 300;
-    max-width: 520px;
-    margin-bottom: 48px;
-  }
-
-  .tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 48px;
-  }
-
-  .tag {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text2);
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    padding: 5px 12px;
-    border-radius: 3px;
-    letter-spacing: 0.05em;
-  }
-
-  .tag.accent { color: var(--amber); border-color: rgba(240,160,32,0.3); background: rgba(240,160,32,0.06); }
-
-  .hero-links { display: flex; gap: 16px; flex-wrap: wrap; }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    border-radius: 4px;
-    font-family: var(--mono);
-    font-size: 13px;
-    font-weight: 500;
-    text-decoration: none;
-    transition: all 0.2s;
-    border: 1px solid transparent;
-  }
-
-  .btn-primary {
-    background: var(--green);
-    color: #0a1a10;
-    border-color: var(--green);
-  }
-
-  .btn-primary:hover { background: #00f09a; box-shadow: 0 0 20px rgba(0,208,132,0.3); }
-
-  .btn-outline {
-    background: transparent;
-    color: var(--text);
-    border-color: var(--border2);
-  }
-
-  .btn-outline:hover { border-color: var(--text2); color: #fff; }
-
-  /* ── MAIN CONTENT ── */
-  .container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 48px;
-  }
-
-  section { padding: 80px 0; border-bottom: 1px solid var(--border); }
-
-  .section-label {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--green);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  h2 {
-    font-family: var(--mono);
-    font-size: 26px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 32px;
-    letter-spacing: -0.01em;
-  }
-
-  /* ── TERMINAL BLOCK ── */
-  .terminal {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    margin: 32px 0;
-  }
-
-  .terminal-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
-    background: var(--bg3);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .dot { width: 10px; height: 10px; border-radius: 50%; }
-  .dot.r { background: #ff5f57; }
-  .dot.y { background: #febc2e; }
-  .dot.g { background: #28c840; }
-
-  .terminal-title {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text3);
-    margin-left: 8px;
-  }
-
-  .terminal-body {
-    padding: 20px 24px;
-    font-family: var(--mono);
-    font-size: 13px;
-    line-height: 1.8;
-  }
-
-  .term-prompt { color: var(--green); }
-  .term-cmd { color: #fff; }
-  .term-out { color: var(--text2); }
-  .term-val { color: var(--amber); }
-  .term-ok { color: var(--green); }
-  .term-comment { color: var(--text3); }
-
-  /* ── ARCHITECTURE ── */
-  .arch-layers {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin: 32px 0;
-  }
-
-  .layer {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg2);
-    transition: border-color 0.2s;
-  }
-
-  .layer:hover { border-color: var(--border2); }
-
-  .layer-num {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text3);
-    width: 20px;
-    flex-shrink: 0;
-  }
-
-  .layer-name {
-    font-family: var(--mono);
-    font-size: 13px;
-    font-weight: 700;
-    width: 180px;
-    flex-shrink: 0;
-  }
-
-  .layer-name.app { color: var(--blue); }
-  .layer-name.proc { color: var(--amber); }
-  .layer-name.drv { color: var(--green); }
-
-  .layer-desc {
-    font-size: 13px;
-    color: var(--text2);
-  }
-
-  .layer-files {
-    margin-left: auto;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text3);
-    text-align: right;
-  }
-
-  .arrow-down {
-    text-align: left;
-    padding-left: 36px;
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--text3);
-  }
-
-  /* ── SPECS TABLE ── */
-  .specs {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    margin: 32px 0;
-  }
-
-  .spec {
-    background: var(--bg2);
-    padding: 16px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .spec-key {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text3);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-
-  .spec-val {
-    font-family: var(--mono);
-    font-size: 14px;
-    color: var(--text);
-    font-weight: 500;
-  }
-
-  .spec-val.green { color: var(--green); }
-  .spec-val.amber { color: var(--amber); }
-
-  /* ── MILESTONES ── */
-  .milestones { display: flex; flex-direction: column; gap: 0; }
-
-  .milestone {
-    display: flex;
-    gap: 20px;
-    padding: 20px 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .milestone:last-child { border-bottom: none; }
-
-  .ms-status {
-    width: 80px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: flex-start;
-    padding-top: 2px;
-  }
-
-  .badge {
-    font-family: var(--mono);
-    font-size: 10px;
-    font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 3px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .badge.done { background: rgba(0,208,132,0.12); color: var(--green); border: 1px solid rgba(0,208,132,0.25); }
-  .badge.pending { background: rgba(74,94,128,0.2); color: var(--text3); border: 1px solid var(--border); }
-
-  .ms-content { flex: 1; }
-
-  .ms-title {
-    font-family: var(--mono);
-    font-size: 14px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 4px;
-  }
-
-  .ms-desc { font-size: 13px; color: var(--text2); }
-
-  /* ── DISCOVERY NOTE ── */
-  .discovery {
-    background: rgba(240,160,32,0.06);
-    border: 1px solid rgba(240,160,32,0.2);
-    border-left: 3px solid var(--amber);
-    padding: 16px 20px;
-    border-radius: 0 6px 6px 0;
-    margin: 24px 0;
-  }
-
-  .discovery-label {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--amber);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .discovery p {
-    font-family: var(--mono);
-    font-size: 13px;
-    color: var(--text2);
-    line-height: 1.6;
-  }
-
-  .discovery code { color: var(--amber); }
-
-  /* ── AUTHOR ── */
-  .author-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 32px;
-    display: flex;
-    gap: 24px;
-    align-items: flex-start;
-  }
-
-  .author-avatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--green2), var(--blue2));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--mono);
-    font-size: 20px;
-    font-weight: 700;
-    color: #fff;
-    flex-shrink: 0;
-  }
-
-  .author-info h3 {
-    font-family: var(--mono);
-    font-size: 16px;
-    color: #fff;
-    margin-bottom: 4px;
-  }
-
-  .author-info p { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
-
-  .author-links { display: flex; gap: 12px; flex-wrap: wrap; }
-
-  .author-link {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text3);
-    text-decoration: none;
-    border: 1px solid var(--border);
-    padding: 4px 10px;
-    border-radius: 3px;
-    transition: all 0.2s;
-    letter-spacing: 0.05em;
-  }
-
-  .author-link:hover { color: var(--green); border-color: rgba(0,208,132,0.3); }
-
-  /* ── FOOTER ── */
-  footer {
-    padding: 40px 48px;
-    text-align: center;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text3);
-    letter-spacing: 0.05em;
-  }
-
-  @media (max-width: 640px) {
-    .hero, .container { padding-left: 24px; padding-right: 24px; }
-    .specs { grid-template-columns: 1fr; }
-    .author-card { flex-direction: column; }
-    .layer-files { display: none; }
-    footer { padding: 40px 24px; }
-  }
+:root {
+  --bg: #070a08;
+  --surface: #0d120f;
+  --border: #1a2e1e;
+  --phosphor: #33ff66;
+  --phosphor-dim: #1a8033;
+  --phosphor-faint: #0d4020;
+  --amber: #ffaa00;
+  --red: #ff3333;
+  --text: #b0d4bc;
+  --muted: #4a7a5a;
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Syne', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  cursor: crosshair;
+}
+
+/* phosphor glow effect */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(51,255,102,0.03) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* scanlines */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.08) 3px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* ── GRID OVERLAY ── */
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(51,255,102,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(51,255,102,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 40px;
+  background: rgba(7,10,8,0.9);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-id {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--phosphor);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+}
+
+.nav-links a {
+  font-size: 11px;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.08em;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--phosphor); }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 120px 40px 64px;
+  position: relative;
+  z-index: 1;
+  border-bottom: 1px solid var(--border);
+}
+
+.status-bar {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 48px;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
+
+.status-dot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--phosphor);
+  box-shadow: 0 0 6px var(--phosphor);
+  animation: blink 1.4s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.status-dot.warn::before { background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: none; }
+
+h1 {
+  font-family: var(--display);
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 800;
+  color: #fff;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  margin-bottom: 32px;
+}
+
+h1 .accent { color: var(--phosphor); text-shadow: 0 0 20px rgba(51,255,102,0.4); }
+
+.hero-sub {
+  max-width: 560px;
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.7;
+  margin-bottom: 48px;
+  font-family: var(--mono);
+}
+
+.hero-sub strong { color: var(--phosphor); font-weight: 500; }
+
+.hero-spec-row {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  margin-bottom: 48px;
+  width: fit-content;
+}
+
+.hspec {
+  padding: 12px 24px;
+  border-right: 1px solid var(--border);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.hspec:last-child { border-right: none; }
+.hspec-label { color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+.hspec-val { color: var(--phosphor); font-weight: 700; }
+
+.cta-row { display: flex; gap: 16px; }
+
+.btn {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 12px 24px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: all 0.15s;
+  display: inline-block;
+}
+
+.btn-p {
+  background: var(--phosphor);
+  color: #070a08;
+  box-shadow: 0 0 16px rgba(51,255,102,0.3);
+}
+
+.btn-p:hover { box-shadow: 0 0 32px rgba(51,255,102,0.6); }
+
+.btn-o {
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.btn-o:hover { border-color: var(--phosphor-dim); color: var(--text); }
+
+/* ── SECTIONS ── */
+.wrap {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.section {
+  padding: 80px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-marker {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.section-marker::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 28px;
+  background: var(--phosphor);
+  box-shadow: 0 0 8px rgba(51,255,102,0.5);
+}
+
+h2 {
+  font-family: var(--display);
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+p { color: var(--text); margin-bottom: 16px; }
+
+/* ── TERMINAL ── */
+.terminal {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin: 32px 0;
+  overflow: hidden;
+}
+
+.term-header {
+  background: var(--border);
+  padding: 8px 16px;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+}
+
+.term-body {
+  padding: 20px 20px;
+  line-height: 2;
+}
+
+.t-line { display: flex; gap: 12px; }
+.t-p { color: var(--phosphor); user-select: none; }
+.t-c { color: #fff; }
+.t-o { color: var(--text); }
+.t-v { color: var(--amber); }
+.t-ok { color: var(--phosphor); }
+.t-cm { color: var(--muted); }
+
+/* ── WARN BOX ── */
+.warn-box {
+  border: 1px solid rgba(255,170,0,0.3);
+  border-left: 3px solid var(--amber);
+  background: rgba(255,170,0,0.04);
+  padding: 16px 20px;
+  margin: 24px 0;
+  font-size: 13px;
+}
+
+.warn-label {
+  font-size: 10px;
+  color: var(--amber);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.warn-box p { color: var(--text); margin: 0; }
+.warn-box code { color: var(--amber); font-size: 12px; }
+
+/* ── REGISTER TABLE ── */
+.reg-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 12px;
+}
+
+.reg-table th {
+  text-align: left;
+  padding: 10px 16px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.reg-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(26,46,30,0.5);
+  vertical-align: top;
+}
+
+.reg-table tr:hover td { background: rgba(51,255,102,0.02); }
+
+.reg-addr { color: var(--amber); font-weight: 700; }
+.reg-name { color: var(--phosphor); }
+.reg-note { color: var(--muted); }
+.reg-warn { color: var(--red); font-weight: 700; }
+
+/* ── ARCH DIAGRAM ── */
+.arch {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 32px 0;
+}
+
+.arch-layer {
+  display: flex;
+  align-items: stretch;
+  height: 64px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.arch-layer:hover { border-color: var(--phosphor-dim); }
+
+.arch-label {
+  width: 180px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.arch-label.app { color: var(--phosphor); background: rgba(51,255,102,0.04); }
+.arch-label.proc { color: var(--amber); background: rgba(255,170,0,0.04); }
+.arch-label.drv { color: #6699ff; background: rgba(102,153,255,0.04); }
+
+.arch-desc {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.arch-files {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 11px;
+  color: var(--muted);
+  border-left: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.arch-arrow {
+  text-align: center;
+  padding: 4px 0;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+/* ── MILESTONES ── */
+.milestones { margin: 24px 0; }
+
+.ms {
+  display: flex;
+  gap: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+
+.ms:last-child { border-bottom: none; }
+
+.ms-tick {
+  font-size: 11px;
+  font-weight: 700;
+  width: 64px;
+  flex-shrink: 0;
+  padding-top: 2px;
+  letter-spacing: 0.06em;
+}
+
+.ms-tick.done { color: var(--phosphor); }
+.ms-tick.wip { color: var(--amber); }
+.ms-tick.todo { color: var(--muted); }
+
+.ms-body { flex: 1; }
+.ms-title { color: #fff; font-weight: 500; margin-bottom: 4px; font-size: 14px; }
+.ms-desc { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 0; }
+
+/* ── FOOTER ── */
+.footer-bar {
+  border-top: 1px solid var(--border);
+  padding: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+  position: relative;
+  z-index: 1;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.footer-links { display: flex; gap: 24px; }
+
+.footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.06em;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover { color: var(--phosphor); }
+
+@media (max-width: 640px) {
+  nav, .hero { padding-left: 20px; padding-right: 20px; }
+  .wrap { padding: 0 20px; }
+  .hero-spec-row { flex-direction: column; width: 100%; }
+  .hspec { border-right: none; border-bottom: 1px solid var(--border); }
+  .arch-files { display: none; }
+  .footer-bar { padding: 24px 20px; }
+}
 </style>
 </head>
 <body>
+<div class="grid-bg"></div>
 
-<!-- ── HERO ────────────────────────────────────────── -->
+<nav>
+  <span class="nav-id">VA · STM32</span>
+  <div class="nav-links">
+    <a href="https://github.com/VaibhavAher100/stm32-vitals-monitor">GitHub</a>
+    <a href="#progress">Progress</a>
+    <a href="https://vaibhavaher100.github.io/rpi-object-orientation-tracker/">RPi project</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
 <div class="hero">
-  <div class="container">
-    <div class="chip">In development · March 2026</div>
-    <h1>STM32 <span>Vitals</span> Monitor</h1>
-    <p class="hero-sub">
-      Bare-metal firmware on STM32L476RG — I2C drivers for medical-grade sensors,
-      on-device signal processing, and UART telemetry. No HAL. Register-level only.
-    </p>
-    <div class="tags">
-      <span class="tag">Embedded C</span>
-      <span class="tag">STM32L476RG</span>
-      <span class="tag">Bare-metal</span>
-      <span class="tag">I2C</span>
-      <span class="tag">UART</span>
-      <span class="tag accent">No HAL</span>
-      <span class="tag">MAX30102</span>
-      <span class="tag">TMP117</span>
-      <span class="tag">FAU Erlangen</span>
-    </div>
-    <div class="hero-links">
-      <a href="https://github.com/VaibhavAher100/stm32-vitals-monitor" class="btn btn-primary" target="_blank">
-        View on GitHub →
-      </a>
-      <a href="#milestones" class="btn btn-outline">
-        Build progress
-      </a>
-    </div>
-  </div>
-</div>
-
-<!-- ── TERMINAL OUTPUT ──────────────────────────────── -->
-<div class="container">
-<section>
-  <p class="section-label">Verified output</p>
-  <h2>UART working — COM7 @ 9600 baud</h2>
-
-  <div class="terminal">
-    <div class="terminal-bar">
-      <div class="dot r"></div>
-      <div class="dot y"></div>
-      <div class="dot g"></div>
-      <span class="terminal-title">CoolTerm — COM7 (STMicroelectronics STLink Virtual COM Port) / 9600 8-N-1</span>
-    </div>
-    <div class="terminal-body">
-      <div><span class="term-out">========================</span></div>
-      <div><span class="term-ok">STM32 Vitals Monitor</span></div>
-      <div><span class="term-ok">UART OK</span></div>
-      <div><span class="term-out">========================</span></div>
-      <div><span class="term-out">Loop count: </span><span class="term-val">0</span></div>
-      <div><span class="term-out">Loop count: </span><span class="term-val">1</span></div>
-      <div><span class="term-out">Loop count: </span><span class="term-val">2</span></div>
-      <div><span class="term-out">Loop count: </span><span class="term-val">3</span></div>
-      <div><span class="term-out">Loop count: </span><span class="term-val">4</span></div>
-      <div><span class="term-comment">// I2C sensor drivers in progress...</span></div>
-    </div>
+  <div class="status-bar">
+    <span class="status-dot">UART · COM7 · 9600 baud · verified</span>
+    <span class="status-dot warn">I2C pending · header soldering required</span>
   </div>
 
-  <div class="discovery">
-    <div class="discovery-label">⚑ Critical discovery during development</div>
-    <p>
-      USART2_BRR is at offset <code>0x0C</code> from USART2 base — absolute address <code>0x4000440C</code>.
-      Address <code>0x40004408</code> is CR3. Writing the baud rate divisor to CR3 silently corrupts UART
-      configuration with no error output. Always verify register offsets against RM0351.
-    </p>
-  </div>
-</section>
-</div>
+  <h1>STM32<br><span class="accent">Vitals</span><br>Monitor</h1>
 
-<!-- ── SPECS ────────────────────────────────────────── -->
-<div class="container">
-<section>
-  <p class="section-label">Hardware</p>
-  <h2>System specification</h2>
-
-  <div class="specs">
-    <div class="spec">
-      <span class="spec-key">MCU</span>
-      <span class="spec-val green">STM32L476RGT6</span>
-    </div>
-    <div class="spec">
-      <span class="spec-key">Core</span>
-      <span class="spec-val">ARM Cortex-M4 @ 80MHz</span>
-    </div>
-    <div class="spec">
-      <span class="spec-key">Flash / RAM</span>
-      <span class="spec-val">1MB / 128KB</span>
-    </div>
-    <div class="spec">
-      <span class="spec-key">Clock (current)</span>
-      <span class="spec-val">MSI default 4MHz</span>
-    </div>
-    <div class="spec">
-      <span class="spec-key">Sensor 1</span>
-      <span class="spec-val amber">MAX30102 — Heart Rate + SpO2</span>
-    </div>
-    <div class="spec">
-      <span class="spec-key">Sensor 2</span>
-      <span class="spec-val amber">TMP117 — ±0.1°C temperature</span>
-    </div>
-    <div class="spec">
-      <span class="spec-key">Sensor bus</span>
-      <span class="spec-val">I2C1 — PB8 (SCL) / PB9 (SDA)</span>
-    </div>
-    <div class="spec">
-      <span class="spec-key">UART</span>
-      <span class="spec-val">USART2 — PA2 TX — 9600 baud</span>
-    </div>
-    <div class="spec">
-      <span class="spec-key">HAL</span>
-      <span class="spec-val green">None — register-level only</span>
-    </div>
-    <div class="spec">
-      <span class="spec-key">Dynamic allocation</span>
-      <span class="spec-val green">None — no malloc anywhere</span>
-    </div>
-  </div>
-</section>
-</div>
-
-<!-- ── ARCHITECTURE ─────────────────────────────────── -->
-<div class="container">
-<section>
-  <p class="section-label">Design</p>
-  <h2>Three-layer architecture</h2>
-  <p style="color: var(--text2); margin-bottom: 32px; font-size: 14px;">
-    Prototype phase: monolithic main.c. Refactor phase: split into layers below.
-    Each layer communicates only with the layer directly beneath it.
+  <p class="hero-sub">
+    Bare-metal C on STM32L476RG. <strong>No HAL. No CubeMX.</strong><br>
+    Every peripheral configured by writing directly to hardware registers —
+    documented in RM0351. I2C drivers for MAX30102 and TMP117,
+    on-device moving average filter, UART telemetry.
   </p>
 
-  <div class="arch-layers">
-    <div class="layer">
-      <span class="layer-num">3</span>
-      <span class="layer-name app">Application</span>
-      <span class="layer-desc">Main loop, alert thresholds, UART output. No register access.</span>
-      <span class="layer-files">main.c</span>
+  <div class="hero-spec-row">
+    <div class="hspec">
+      <div class="hspec-label">MCU</div>
+      <div class="hspec-val">STM32L476RG</div>
     </div>
-    <div class="arrow-down">↓ calls</div>
-    <div class="layer">
-      <span class="layer-num">2</span>
-      <span class="layer-name proc">Processing</span>
-      <span class="layer-desc">Moving average filter, circular buffer, threshold detection.</span>
-      <span class="layer-files">filter.c / filter.h</span>
+    <div class="hspec">
+      <div class="hspec-label">Core</div>
+      <div class="hspec-val">Cortex-M4</div>
     </div>
-    <div class="arrow-down">↓ calls</div>
-    <div class="layer">
-      <span class="layer-num">1</span>
-      <span class="layer-name drv">Driver</span>
-      <span class="layer-desc">Register writes only. UART, I2C, TMP117, MAX30102 drivers.</span>
-      <span class="layer-files">uart.c  i2c.c  tmp117.c  max30102.c</span>
+    <div class="hspec">
+      <div class="hspec-label">Clock</div>
+      <div class="hspec-val">4 MHz MSI</div>
+    </div>
+    <div class="hspec">
+      <div class="hspec-label">UART</div>
+      <div class="hspec-val">9600 baud ✓</div>
+    </div>
+    <div class="hspec">
+      <div class="hspec-label">HAL</div>
+      <div class="hspec-val">None</div>
     </div>
   </div>
-</section>
+
+  <div class="cta-row">
+    <a href="https://github.com/VaibhavAher100/stm32-vitals-monitor" class="btn btn-p" target="_blank">View source →</a>
+    <a href="#progress" class="btn btn-o">Build log</a>
+  </div>
 </div>
 
-<!-- ── MILESTONES ────────────────────────────────────── -->
-<div class="container">
-<section id="milestones">
-  <p class="section-label">Progress</p>
-  <h2>Build milestones</h2>
+<!-- ── VERIFIED OUTPUT ── -->
+<div class="wrap">
+<div class="section">
+  <div class="section-marker"><h2>Verified output</h2></div>
+  <p>UART is working. CoolTerm on COM7 at 9600 baud. Sensor drivers come next — blocked on soldering headers onto the breakout boards.</p>
+
+  <div class="terminal">
+    <div class="term-header">
+      <span>CoolTerm — COM7 · STMicroelectronics STLink Virtual COM Port · 9600 8-N-1</span>
+      <span>connected</span>
+    </div>
+    <div class="term-body">
+      <div class="t-line"><span class="t-o">========================</span></div>
+      <div class="t-line"><span class="t-ok">STM32 Vitals Monitor</span></div>
+      <div class="t-line"><span class="t-ok">UART OK</span></div>
+      <div class="t-line"><span class="t-o">========================</span></div>
+      <div class="t-line"><span class="t-o">Loop count: </span><span class="t-v">0</span></div>
+      <div class="t-line"><span class="t-o">Loop count: </span><span class="t-v">1</span></div>
+      <div class="t-line"><span class="t-o">Loop count: </span><span class="t-v">2</span></div>
+      <div class="t-line"><span class="t-cm">// next: TMP117 I2C · then MAX30102 · then filter</span></div>
+    </div>
+  </div>
+
+  <div class="warn-box">
+    <div class="warn-label">Bug found during development</div>
+    <p>USART2_BRR sits at offset <code>0x0C</code> from the USART2 base — absolute address <code>0x4000440C</code>.
+    Offset <code>0x08</code> is CR3. Writing a baud rate divisor to CR3 produces no output and no error.
+    Four hours of debugging, one wrong hex digit. RM0351 page 1388.</p>
+  </div>
+</div>
+</div>
+
+<!-- ── REGISTER MAP ── -->
+<div class="wrap">
+<div class="section">
+  <div class="section-marker"><h2>Register map</h2></div>
+  <p>Every address cross-referenced to RM0351. No guessing.</p>
+
+  <table class="reg-table">
+    <thead>
+      <tr>
+        <th>Register</th>
+        <th>Address</th>
+        <th>Bits used</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="reg-name">RCC_AHB2ENR</td><td class="reg-addr">0x4002104C</td><td>Bit 0 = GPIOA, Bit 1 = GPIOB</td><td class="reg-note">Clock enable before any peripheral access</td></tr>
+      <tr><td class="reg-name">RCC_APB1ENR1</td><td class="reg-addr">0x40021058</td><td>Bit 17 = USART2, Bit 21 = I2C1</td><td class="reg-note"></td></tr>
+      <tr><td class="reg-name">GPIOA_MODER</td><td class="reg-addr">0x48000000</td><td>Bits 5:4 = PA2, Bits 11:10 = PA5</td><td class="reg-note">10 = AF mode, 01 = output</td></tr>
+      <tr><td class="reg-name">GPIOA_AFRL</td><td class="reg-addr">0x48000020</td><td>Bits 11:8 = PA2 → AF7</td><td class="reg-note">AF7 = USART2_TX</td></tr>
+      <tr><td class="reg-name">USART2_CR1</td><td class="reg-addr">0x40004400</td><td>Bit 0 = UE, Bit 3 = TE</td><td class="reg-note">Set TE before UE</td></tr>
+      <tr>
+        <td class="reg-warn">USART2_BRR ⚑</td>
+        <td class="reg-addr" style="color:#ff3333">0x4000440C</td>
+        <td>BRR = 417 for 9600 @ 4MHz</td>
+        <td class="reg-note" style="color:#ff6644">Offset 0x0C — not 0x08 (that is CR3)</td>
+      </tr>
+      <tr><td class="reg-name">USART2_ISR</td><td class="reg-addr">0x4000441C</td><td>Bit 7 = TXE</td><td class="reg-note">Wait for 1 before each TDR write</td></tr>
+      <tr><td class="reg-name">USART2_TDR</td><td class="reg-addr">0x40004428</td><td>Write byte to transmit</td><td class="reg-note"></td></tr>
+      <tr><td class="reg-name">I2C1_TIMINGR</td><td class="reg-addr">0x40005410</td><td>0x00100D14</td><td class="reg-note">100kHz standard mode at 4MHz</td></tr>
+    </tbody>
+  </table>
+</div>
+</div>
+
+<!-- ── ARCHITECTURE ── -->
+<div class="wrap">
+<div class="section">
+  <div class="section-marker"><h2>Architecture</h2></div>
+  <p>Prototype phase: one file. Refactor phase: three layers. The Git history shows both — the prototype commits exist before the refactor commit. An interviewer can read the decision.</p>
+
+  <div class="arch">
+    <div class="arch-layer">
+      <div class="arch-label app">Application</div>
+      <div class="arch-desc">Main loop, alert logic, UART formatting. No register access allowed here.</div>
+      <div class="arch-files">main.c</div>
+    </div>
+    <div class="arch-arrow">↓ calls only layer below</div>
+    <div class="arch-layer">
+      <div class="arch-label proc">Processing</div>
+      <div class="arch-desc">Moving average filter. Circular buffer. O(1) per sample, no malloc.</div>
+      <div class="arch-files">filter.c / filter.h</div>
+    </div>
+    <div class="arch-arrow">↓ calls only layer below</div>
+    <div class="arch-layer">
+      <div class="arch-label drv">Driver</div>
+      <div class="arch-desc">Register writes only. UART, I2C, TMP117, MAX30102. Nothing leaks upward.</div>
+      <div class="arch-files">uart · i2c · tmp117 · max30102</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── PROGRESS ── -->
+<div class="wrap">
+<div class="section" id="progress">
+  <div class="section-marker"><h2>Build log</h2></div>
 
   <div class="milestones">
-    <div class="milestone">
-      <div class="ms-status"><span class="badge done">done</span></div>
-      <div class="ms-content">
+    <div class="ms">
+      <span class="ms-tick done">✓ DONE</span>
+      <div class="ms-body">
         <div class="ms-title">LED blink — first register write</div>
-        <div class="ms-desc">LD2 blinking at 1Hz via direct RCC, GPIOA_MODER, GPIOA_ODR register writes. No HAL. No CubeMX generation.</div>
+        <p class="ms-desc">RCC_AHB2ENR → GPIOA_MODER → GPIOA_ODR. LD2 at 1Hz. No HAL involved anywhere.</p>
       </div>
     </div>
-    <div class="milestone">
-      <div class="ms-status"><span class="badge done">done</span></div>
-      <div class="ms-content">
-        <div class="ms-title">UART verified — COM7 @ 9600 baud</div>
-        <div class="ms-desc">PA2 configured as AF7 (USART2_TX). Banner and loop counter printing cleanly on CoolTerm. Critical BRR address bug found and documented.</div>
+    <div class="ms">
+      <span class="ms-tick done">✓ DONE</span>
+      <div class="ms-body">
+        <div class="ms-title">UART — COM7 · 9600 baud</div>
+        <p class="ms-desc">PA2 → AF7. USART2 configured. BRR address bug found and documented. Clean output in CoolTerm.</p>
       </div>
     </div>
-    <div class="milestone">
-      <div class="ms-status"><span class="badge pending">next</span></div>
-      <div class="ms-content">
+    <div class="ms">
+      <span class="ms-tick wip">⋯ NEXT</span>
+      <div class="ms-body">
         <div class="ms-title">TMP117 I2C driver</div>
-        <div class="ms-desc">I2C1 bare-metal init on PB8/PB9. Read device ID (0x0117), then temperature register. Print over UART. Pending header pin soldering.</div>
+        <p class="ms-desc">I2C1 on PB8/PB9. Read device ID (0x0117), then temperature register. Blocked: TMP117 breakout board needs header pins soldered.</p>
       </div>
     </div>
-    <div class="milestone">
-      <div class="ms-status"><span class="badge pending">next</span></div>
-      <div class="ms-content">
-        <div class="ms-title">MAX30102 I2C driver</div>
-        <div class="ms-desc">Read Part ID (0x15), configure FIFO and LED registers, read raw IR photoplethysmographic data. Shared I2C bus with TMP117.</div>
+    <div class="ms">
+      <span class="ms-tick todo">· · ·</span>
+      <div class="ms-body">
+        <div class="ms-title">MAX30102 driver + raw IR data</div>
+        <p class="ms-desc">Shared I2C bus, address 0x57. FIFO read, LED register config, raw photoplethysmographic output over UART.</p>
       </div>
     </div>
-    <div class="milestone">
-      <div class="ms-status"><span class="badge pending">next</span></div>
-      <div class="ms-content">
+    <div class="ms">
+      <span class="ms-tick todo">· · ·</span>
+      <div class="ms-body">
         <div class="ms-title">Moving average filter</div>
-        <div class="ms-desc">Circular buffer implementation in C — O(1) per sample, no dynamic allocation. Compare raw vs filtered IR output over UART.</div>
+        <p class="ms-desc">Circular buffer in C. Fixed window, no dynamic allocation, O(1) per sample. Compare raw vs filtered output side by side.</p>
       </div>
     </div>
-    <div class="milestone">
-      <div class="ms-status"><span class="badge pending">next</span></div>
-      <div class="ms-content">
+    <div class="ms">
+      <span class="ms-tick todo">· · ·</span>
+      <div class="ms-body">
         <div class="ms-title">Refactor to 3-layer architecture</div>
-        <div class="ms-desc">Split monolithic main.c into driver, processing, and application layers. Git history preserves the full prototype-to-architecture evolution.</div>
+        <p class="ms-desc">Split the working monolith. One refactor commit. Git history keeps the prototype visible.</p>
       </div>
     </div>
   </div>
-</section>
+</div>
 </div>
 
-<!-- ── AUTHOR ─────────────────────────────────────────── -->
-<div class="container">
-<section>
-  <p class="section-label">Author</p>
-  <h2>About this project</h2>
-
-  <div class="author-card">
-    <div class="author-avatar">VA</div>
-    <div class="author-info">
-      <h3>Vaibhav Aher</h3>
-      <p>
-        M.Sc. ICT student at FAU Erlangen-Nürnberg, specialising in Embedded Systems.
-        B.E. Electronics and Telecommunication Engineering, University of Mumbai.
-        Building toward medical device firmware and functional safety engineering.
-      </p>
-      <div class="author-links">
-        <a href="https://github.com/VaibhavAher100" class="author-link" target="_blank">GitHub</a>
-        <a href="https://github.com/VaibhavAher100/stm32-vitals-monitor" class="author-link" target="_blank">This repo</a>
-        <a href="https://github.com/VaibhavAher100/rpi-object-orientation-tracker" class="author-link" target="_blank">RPi project</a>
-      </div>
-    </div>
+<div class="footer-bar">
+  <span>Vaibhav Aher · M.Sc. ICT · FAU Erlangen · 2026</span>
+  <div class="footer-links">
+    <a href="https://github.com/VaibhavAher100/stm32-vitals-monitor">GitHub</a>
+    <a href="https://github.com/VaibhavAher100">Profile</a>
+    <a href="https://vaibhavaher100.github.io/rpi-object-orientation-tracker/">RPi project</a>
   </div>
-</section>
 </div>
-
-<footer>
-  STM32 Vitals Monitor — Bare-metal firmware — FAU Erlangen — 2026
-  &nbsp;·&nbsp;
-  No HAL. No malloc. Register-level C.
-</footer>
-
 </body>
 </html>

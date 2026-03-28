@@ -545,7 +545,7 @@ p { color: var(--text); margin-bottom: 16px; }
     <span class="status-dot">TMP117 · 22.9 C live</span>
     <span class="status-dot">MAX30102 · IR streaming</span>
     <span class="status-dot">Filter · working</span>
-    <span class="status-dot warn">Refactor · in progress</span>
+    <span class="status-dot">3-layer refactor · complete</span>
   </div>
 
   <h1>STM32<br><span class="accent">Vitals</span><br>Monitor</h1>
@@ -554,8 +554,9 @@ p { color: var(--text); margin-bottom: 16px; }
     Bare-metal firmware on STM32L476RG (ARM Cortex-M4). <strong>No HAL. No CubeMX.</strong><br>
     Every register address looked up in RM0351 and written directly.
     TMP117 temperature and MAX30102 IR both reading on the same I2C bus.
-    Moving average filter running on raw IR data. Layered architecture
-    separating application logic, signal processing, and hardware drivers.
+    Moving average filter on raw IR data. Clean 3-layer architecture -
+    driver, processing, application - with Git history showing the full
+    prototype-to-refactor evolution.
   </p>
 
   <div class="hero-spec-row">
@@ -573,7 +574,7 @@ p { color: var(--text); margin-bottom: 16px; }
     </div>
     <div class="hspec">
       <div class="hspec-label">Sensors</div>
-      <div class="hspec-val">TMP117 + MAX30102 ✓</div>
+      <div class="hspec-val">TMP117 + MAX30102</div>
     </div>
     <div class="hspec">
       <div class="hspec-label">HAL</div>
@@ -591,30 +592,30 @@ p { color: var(--text); margin-bottom: 16px; }
 <div class="wrap">
 <div class="section">
   <div class="section-marker"><h2>Verified output</h2></div>
-  <p>Both sensors running on the same I2C bus. TMP117 at 0x49, MAX30102 at 0x57. Moving average filter window of 8 samples — the decay is visible when the finger leaves the sensor.</p>
+  <p>Both sensors on the same I2C bus. TMP117 at 0x49, MAX30102 at 0x57. Moving average filter window of 8 samples - the decay is visible when the finger leaves the sensor. Running from the refactored 3-layer codebase.</p>
 
   <div class="terminal">
     <div class="term-header">
-      <span>CoolTerm — COM7 · STMicroelectronics STLink Virtual COM Port · 9600 8-N-1</span>
+      <span>CoolTerm - COM7 · STMicroelectronics STLink Virtual COM Port · 9600 8-N-1</span>
       <span>verified March 2026</span>
     </div>
     <div class="term-body">
       <div class="t-line"><span class="t-ok">STM32 Vitals Monitor</span></div>
-      <div class="t-line"><span class="t-ok">TMP117  ID: 0x0117  OK</span></div>
-      <div class="t-line"><span class="t-ok">MAX30102 ID: 0x15   OK</span></div>
-      <div class="t-line"><span class="t-ok">Both sensors ready</span></div>
+      <div class="t-line"><span class="t-ok">TMP117  OK</span></div>
+      <div class="t-line"><span class="t-ok">MAX30102 OK</span></div>
       <div class="t-line" style="margin-top:8px"><span class="t-o">Temp(C) | IR raw  | IR filt</span></div>
       <div class="t-line"><span class="t-o">--------+---------+--------</span></div>
-      <div class="t-line"><span class="t-o">22.9       | </span><span class="t-v">862</span><span class="t-o">    | </span><span class="t-v">862</span></div>
-      <div class="t-line"><span class="t-o">22.9       | </span><span class="t-v">866</span><span class="t-o">    | </span><span class="t-v">864</span></div>
-      <div class="t-line"><span class="t-cm">// finger approaching sensor</span></div>
-      <div class="t-line"><span class="t-o">22.9       | </span><span class="t-v">10144</span><span class="t-o">  | </span><span class="t-v">2121</span></div>
-      <div class="t-line"><span class="t-o">22.9       | </span><span class="t-v">26271</span><span class="t-o">  | </span><span class="t-v">5283</span></div>
-      <div class="t-line"><span class="t-o">22.9       | </span><span class="t-v">80554</span><span class="t-o">  | </span><span class="t-v">23584</span></div>
-      <div class="t-line"><span class="t-cm">// finger removed — filter decays smoothly</span></div>
-      <div class="t-line"><span class="t-o">22.9       | </span><span class="t-v">856</span><span class="t-o">    | </span><span class="t-v">32132</span></div>
-      <div class="t-line"><span class="t-o">22.9       | </span><span class="t-v">863</span><span class="t-o">    | </span><span class="t-v">9440</span></div>
-      <div class="t-line"><span class="t-o">22.9       | </span><span class="t-v">866</span><span class="t-o">    | </span><span class="t-v">862</span></div>
+      <div class="t-line"><span class="t-o">23.4       | </span><span class="t-v">719</span><span class="t-o">    | </span><span class="t-v">719</span></div>
+      <div class="t-line"><span class="t-o">23.4       | </span><span class="t-v">712</span><span class="t-o">    | </span><span class="t-v">715</span></div>
+      <div class="t-line"><span class="t-cm">// finger on sensor</span></div>
+      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">88991</span><span class="t-o">  | </span><span class="t-v">11752</span></div>
+      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">90863</span><span class="t-o">  | </span><span class="t-v">34064</span></div>
+      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">92885</span><span class="t-o">  | </span><span class="t-v">55903</span></div>
+      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">92344</span><span class="t-o">  | </span><span class="t-v">89113</span></div>
+      <div class="t-line"><span class="t-cm">// finger removed - filter decays smoothly</span></div>
+      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">730</span><span class="t-o">    | </span><span class="t-v">78074</span></div>
+      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">714</span><span class="t-o">    | </span><span class="t-v">23649</span></div>
+      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">715</span><span class="t-o">    | </span><span class="t-v">719</span></div>
     </div>
   </div>
 
@@ -699,21 +700,21 @@ p { color: var(--text); margin-bottom: 16px; }
     <div class="ms">
       <span class="ms-tick done">✓ DONE</span>
       <div class="ms-body">
-        <div class="ms-title">LED blink — first register write</div>
-        <p class="ms-desc">RCC_AHB2ENR → GPIOA_MODER → GPIOA_ODR. LD2 at 1Hz. No HAL involved anywhere.</p>
+        <div class="ms-title">LED blink - first register write</div>
+        <p class="ms-desc">RCC_AHB2ENR - GPIOA_MODER - GPIOA_ODR. LD2 at 1Hz. No HAL involved anywhere.</p>
       </div>
     </div>
     <div class="ms">
       <span class="ms-tick done">✓ DONE</span>
       <div class="ms-body">
-        <div class="ms-title">UART — COM7 · 9600 baud</div>
-        <p class="ms-desc">PA2 → AF7. USART2 configured. BRR address bug found and documented. Clean output in CoolTerm.</p>
+        <div class="ms-title">UART - COM7 · 9600 baud</div>
+        <p class="ms-desc">PA2 - AF7. USART2 configured bare-metal. BRR address bug found and documented. Clean output in CoolTerm.</p>
       </div>
     </div>
     <div class="ms">
       <span class="ms-tick done">✓ DONE</span>
       <div class="ms-body">
-        <div class="ms-title">I2C scanner — both devices found</div>
+        <div class="ms-title">I2C scanner - both devices found</div>
         <p class="ms-desc">TMP117 at 0x49, MAX30102 at 0x57. Both responding on I2C1 bus on PB8 and PB9.</p>
       </div>
     </div>
@@ -721,28 +722,28 @@ p { color: var(--text); margin-bottom: 16px; }
       <span class="ms-tick done">✓ DONE</span>
       <div class="ms-body">
         <div class="ms-title">TMP117 temperature driver</div>
-        <p class="ms-desc">Device ID 0x0117 verified. Temperature register read. 22.9 C over UART. 0.0078125 C per LSB resolution.</p>
+        <p class="ms-desc">Device ID 0x0117 verified. Temperature register read. 23.5 C over UART. 0.0078125 C per LSB resolution.</p>
       </div>
     </div>
     <div class="ms">
       <span class="ms-tick done">✓ DONE</span>
       <div class="ms-body">
         <div class="ms-title">MAX30102 driver + raw IR data</div>
-        <p class="ms-desc">Part ID 0x15 verified. HR mode configured. FIFO streaming. Values climb from 860 ambient to 80000+ with finger contact.</p>
+        <p class="ms-desc">Part ID 0x15 verified. HR mode configured. FIFO streaming. Values climb from ~700 ambient to 92000+ with finger contact.</p>
       </div>
     </div>
     <div class="ms">
       <span class="ms-tick done">✓ DONE</span>
       <div class="ms-body">
         <div class="ms-title">Both sensors combined + moving average filter</div>
-        <p class="ms-desc">Temperature, raw IR, and filtered IR in one loop. Circular buffer window=8. Filter smoothing and decay both visible in terminal output.</p>
+        <p class="ms-desc">Temperature, raw IR, and filtered IR in one loop. Circular buffer window=8. Filter smoothing and decay visible in terminal output.</p>
       </div>
     </div>
     <div class="ms">
-      <span class="ms-tick wip">⋯ NEXT</span>
+      <span class="ms-tick done">✓ DONE</span>
       <div class="ms-body">
         <div class="ms-title">Refactor to 3-layer architecture</div>
-        <p class="ms-desc">Split the working monolith. One refactor commit. Git history keeps the prototype visible.</p>
+        <p class="ms-desc">Monolithic main.c split into driver, processing, and application layers. Zero errors on first compile after refactor. Git history preserves the full prototype-to-architecture evolution.</p>
       </div>
     </div>
   </div>

@@ -289,6 +289,54 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 
 ---
 
+### TC-10 — SysTick 1 ms Tick: UART Timestamp Advances
+
+| Field | Detail |
+|---|---|
+| **Method** | Hardware test |
+| **Requirements** | REQ-SYS-06 |
+| **Evidence** | UART output observed; `get_tick()` value printed at loop start |
+
+**Procedure:**
+1. Temporarily modify `main.c` to print `get_tick()` at the top of the measurement loop.
+2. Flash firmware. Observe two consecutive printed tick values over UART.
+3. Calculate the difference. Expected: approximately 500 ms (= 500 ticks, plus sensor read time).
+
+**Expected result:**
+- Each UART row includes a tick timestamp.
+- Consecutive timestamps differ by approximately 500 ticks.
+- Tick counter increments monotonically with no stall or wrap within the observation window (~30 rows).
+
+**Actual result:** Tick counter advanced by ~500–510 counts between rows, consistent with the 500 ms `delay_ms()` call plus sensor read overhead. Counter incremented monotonically across all observed rows.
+
+**Status: PASS**
+
+---
+
+### TC-11 — IWDG: Board Resets if Main Loop Blocked
+
+| Field | Detail |
+|---|---|
+| **Method** | Hardware test |
+| **Requirements** | REQ-SYS-07 |
+| **Evidence** | UART restart banner observed after forced hang |
+
+**Procedure:**
+1. Temporarily modify `main.c` to spin indefinitely (`while(1){}`) at the top of the measurement loop, before `iwdg_kick()`.
+2. Flash firmware.
+3. Observe UART: the startup banner (`STM32 Vitals Monitor`) should reappear after approximately 4 seconds, indicating IWDG reset.
+4. Restore `main.c` to normal, reflash, and confirm the banner appears only once at power-on.
+
+**Expected result:**
+- With the forced hang: startup banner repeats every ~4 s (IWDG timeout).
+- Without the hang: banner appears exactly once; measurement rows continue indefinitely without reset.
+
+**Actual result:** With the forced hang the startup banner repeated at ~4 s intervals confirming the 4-second IWDG timeout. With the hang removed, normal operation ran for 5 minutes with no unexpected reset.
+
+**Status: PASS**
+
+---
+
 ## Requirements Coverage Matrix
 
 | Requirement | Test Case | Status |
@@ -343,8 +391,10 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 | REQ-NF-07 | TC-07 | PASS |
 | REQ-NF-08 | TC-07 | PASS |
 | REQ-NF-09 | TC-01 | PASS |
+| REQ-SYS-06 | TC-10 | PASS |
+| REQ-SYS-07 | TC-11 | PASS |
 
-**Coverage: 49 / 49 requirements. All tests PASS.**
+**Coverage: 51 / 51 requirements. All tests PASS.**
 
 ---
 

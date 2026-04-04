@@ -8,22 +8,18 @@
  *   uart/i2c/tmp117/max30102 - driver layer
  */
 
+#include "systick.h"
+#include "iwdg.h"
 #include "uart.h"
 #include "i2c.h"
 #include "tmp117.h"
 #include "max30102.h"
 #include "filter.h"
 
-/* Rule 5.9: unique name to avoid duplicate identifier with i2c.c / max30102.c */
-/* Rule 17.8: local copy of parameter avoids modifying the parameter directly  */
-static void main_delay(volatile uint32_t n)
-{
-    volatile uint32_t count = n;
-    while(count-- != 0U) {}
-}
-
 int main(void)
 {
+    systick_init();
+    iwdg_init();
     uart_init();
     i2c_init();
 
@@ -51,7 +47,7 @@ int main(void)
     Filter ir_filter;
     filter_init(&ir_filter);
 
-    while(1)
+    for(;;)
     {
         /* Processing layer - read and filter */
         int32_t  temp     = tmp117_read_celsius_x10();
@@ -68,6 +64,7 @@ int main(void)
         uart_int((int32_t)ir_filt);
         uart_str("\r\n");
 
-        main_delay(500000U);
+        iwdg_kick();
+        delay_ms(500U);
     }
 }

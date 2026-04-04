@@ -1,5 +1,6 @@
 #include "max30102.h"
 #include "i2c.h"
+#include "systick.h"
 
 #define REG_FIFO_WR  0x04U
 #define REG_FIFO_RD  0x06U
@@ -10,12 +11,6 @@
 #define REG_LED1     0x0CU
 #define REG_PARTID   0xFFU
 
-/* Rule 5.9: unique name; Rule 17.8: local copy avoids modifying parameter */
-static void max30102_delay(volatile uint32_t n)
-{
-    volatile uint32_t count = n;
-    while(count-- != 0U) {}
-}
 
 static uint32_t read_fifo_3bytes(void)
 {
@@ -46,7 +41,7 @@ static uint32_t read_fifo_3bytes(void)
     timeout = 50000U;
     while(!(I2C1_ISR & (1U << 6)) && timeout--) {}
     I2C1_CR2 |= (1U << 14);
-    max30102_delay(10U);
+    delay_ms(1U);
 
     /* Read 3 bytes */
     I2C1_ICR = 0x3F38U;
@@ -68,7 +63,7 @@ static uint32_t read_fifo_3bytes(void)
     result |= (uint32_t)I2C1_RXDR;
 
     result &= 0x3FFFFU;
-    max30102_delay(10U);
+    delay_ms(1U);
     return result;
 }
 
@@ -78,7 +73,7 @@ uint8_t max30102_init(void)
     if(id != MAX30102_ID_EXPECTED) { return 0U; } /* Rule 15.6: braces on if body */
 
     (void)i2c_write_reg(MAX30102_ADDR, REG_MODE,    0x40U); /* reset        Rule 17.7 */
-    max30102_delay(200000U);
+    delay_ms(150U);
     (void)i2c_write_reg(MAX30102_ADDR, REG_FIFO_CF, 0x4FU); /* 4 avg, rollover on */
     (void)i2c_write_reg(MAX30102_ADDR, REG_MODE,    0x02U); /* HR mode */
     (void)i2c_write_reg(MAX30102_ADDR, REG_SPO2,    0x27U); /* 100sps, 411us */

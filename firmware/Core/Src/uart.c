@@ -28,21 +28,18 @@ void uart_char(char c)
 
 void uart_str(const char *s)
 {
-    while(*s) uart_char(*s++);
+    const char *p = s;                         /* Rule 17.8: local copy, do not modify parameter */
+    while(*p != '\0') { uart_char(*p); p++; }
 }
 
 void uart_int(int32_t v)
 {
     char buf[12]; uint8_t i = 0;
-    if(v < 0) { uart_char('-'); v = -v; }
-    if(v == 0) { uart_char('0'); return; }
-    while(v > 0) { buf[i++] = '0' + (v % 10); v /= 10; }
-    while(i > 0) uart_char(buf[--i]);
+    int32_t val = v;                           /* Rule 17.8: local copy, do not modify parameter */
+    if(val < 0) { uart_char('-'); val = -val; }
+    if(val == 0) { uart_char('0'); return; }
+    while(val > 0) { buf[i++] = '0' + (val % 10); val /= 10; }
+    while(i > 0U) { uart_char(buf[--i]); }    /* Rule 10.4: 0U matches unsigned i */
 }
 
-void uart_hex(uint8_t v)
-{
-    const char *h = "0123456789ABCDEF";
-    uart_char(h[v >> 4]);
-    uart_char(h[v & 0xF]);
-}
+/* Rule 8.7: uart_hex removed — unused function; declaration removed from uart.h */

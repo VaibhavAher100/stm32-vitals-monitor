@@ -67,7 +67,14 @@ Implement EXT-06 (BPM detection from filtered PPG/IR signal).
 
 ## What Was Done This Session
 
-*(fill in after implementation)*
+**EXT-06 — BPM detection from PPG: DONE**
+- Created `firmware/Core/Inc/bpm.h` — `BpmDetector` struct; `BPM_HISTORY=8`, `BPM_REFRACTORY_MS=333`, `BPM_INVALID=0` constants; declares `bpm_init`, `bpm_update`, `bpm_get`
+- Created `firmware/Core/Src/bpm.c` — `compute_threshold()` static helper (rolling min/max midpoint); rising-edge detector with refractory guard; `bpm_get()` returns `60000 / interval_ms`
+- `main.c` — `#include "bpm.h"`; `BpmDetector bpm`; `bpm_init` at startup; `bpm_update` + `bpm_get` in loop; BPM column added to header and output rows; `---` displayed until first valid interval
+
+**Docs: DONE**
+- `docs/requirements.md` — added §2.7 BPM Detection (REQ-SYS-08); renumbered Measurement Output to §2.8; updated REQ-OUT-01 (4 fields); moved "Clinical heart rate" out of Out of Scope
+- `docs/testing.md` — added TC-12 (BPM at rest); updated REQ-OUT-01 coverage to TC-05, TC-12; coverage updated to 52/52
 
 ---
 

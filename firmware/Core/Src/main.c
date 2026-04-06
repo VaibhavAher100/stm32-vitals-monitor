@@ -14,7 +14,13 @@
 #include "max30102.h"
 #include "filter.h"
 
-static void delay(volatile uint32_t n) { while(n--) {} }
+/* Rule 5.9: unique name to avoid duplicate identifier with i2c.c / max30102.c */
+/* Rule 17.8: local copy of parameter avoids modifying the parameter directly  */
+static void main_delay(volatile uint32_t n)
+{
+    volatile uint32_t count = n;
+    while(count-- != 0U) {}
+}
 
 int main(void)
 {
@@ -26,15 +32,17 @@ int main(void)
     uart_str("========================\r\n");
 
     /* Initialise and verify sensors */
-    if(tmp117_init())
+    if(tmp117_init()) {                         /* Rule 15.6: braces on all branches */
         uart_str("TMP117  OK\r\n");
-    else
+    } else {
         uart_str("TMP117  FAIL\r\n");
+    }
 
-    if(max30102_init())
+    if(max30102_init()) {
         uart_str("MAX30102 OK\r\n");
-    else
+    } else {
         uart_str("MAX30102 FAIL\r\n");
+    }
 
     uart_str("========================\r\n");
     uart_str("Temp(C) | IR raw  | IR filt\r\n");
@@ -60,6 +68,6 @@ int main(void)
         uart_int((int32_t)ir_filt);
         uart_str("\r\n");
 
-        delay(500000);
+        main_delay(500000U);
     }
 }

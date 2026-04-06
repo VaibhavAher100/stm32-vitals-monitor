@@ -51,21 +51,6 @@ Implications:
 
 A FreeRTOS extension is planned as a future phase of this project to address these constraints.
 
-### Delay Function is Not Calibrated
-
-The `delay()` function uses a simple count-down loop:
-```c
-void delay(volatile uint32_t count) { while (count--); }
-```
-
-This is not a calibrated timer. The actual delay duration depends on:
-- Compiler optimisation level
-- Instruction execution time at the current clock frequency
-- Other instructions executing in the same loop
-
-For precise timing, the STM32 SysTick or TIM peripheral should be used.
-This is marked as a future improvement.
-
 ### No Power Management
 
 The STM32L476 supports multiple low-power sleep modes (Sleep, Stop, Standby).
@@ -74,14 +59,6 @@ This project runs in full active mode at all times (4 MHz MSI clock).
 Power consumption in active mode is approximately 1 mA at 4 MHz.
 A production medical device would implement sleep modes between sensor reads
 to reduce average consumption to microamps.
-
-### No Watchdog Timer
-
-A watchdog timer (IWDG or WWDG) is not implemented.
-If the firmware hangs — for example, due to an I2C bus lock-up — the system will not
-automatically recover. A hard reset (RESET button) is required.
-
-Watchdog implementation is planned for a future phase.
 
 ### Single I2C Bus, No Error Recovery
 

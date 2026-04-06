@@ -8,8 +8,9 @@ Two verification methods are used:
 - **Hardware test** — firmware flashed to the board, output observed
 - **Static inspection** — source files examined by grep or code review
 
-All hardware tests were performed on the target hardware:
-STM32 Nucleo-L476RG · TMP117 (0x49) · MAX30102 (0x57) · COM7 · 9600 baud
+All hardware tests were performed on the target hardware during development.
+TC-01 to TC-09 formalise tests already run - evidence is the existing results/ screenshots.
+Hardware: STM32 Nucleo-L476RG · TMP117 (0x49) · MAX30102 (0x57) · COM7 · 9600 baud
 
 ---
 

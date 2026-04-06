@@ -100,22 +100,24 @@ Full detail: `docs/registers.md`
 
 ## Limitations
 
-- Single loop, no RTOS - sensors polled sequentially
-- No watchdog - I2C lockup needs a hard reset
-- MAX30102 raw IR only - not a validated SpO2 or heart rate reading
-- Delay function is a count-down loop, not a calibrated timer
+- No clinical accuracy - raw sensor values only, not validated readings
+- No power management - runs in full active mode
+- No non-volatile storage - readings lost if UART disconnects
 
-`docs/limitations.md` has the full list.
+See `docs/limitations.md` for the full list.
 
 ---
 
 ## Build
 
-1. Open `firmware/Core/` in STM32CubeIDE
-2. Ctrl+B
-3. Drag `firmware/Core/Debug/Core.bin` onto NODE_L476RG
-4. CoolTerm - COM7, 9600, 8N1, Flow Control: None
-5. Press RESET
+Prerequisites: STM32CubeIDE 2.7 or later
+
+1. Open `firmware/Core/` as an existing project in STM32CubeIDE
+2. Ctrl+B to build
+3. Drag `firmware/Core/Debug/Core.bin` onto the NODE_L476RG drive
+4. Open a serial terminal (CoolTerm, PuTTY, etc.) on the port assigned to
+   your Nucleo board - 9600 baud, 8N1, no flow control
+5. Press RESET on the board
 
 ---
 

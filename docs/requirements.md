@@ -34,6 +34,8 @@ breakout (I2C 0x57) · shared I2C1 bus on PB8/PB9.
 | REQ-SYS-03 | The firmware shall attempt to initialise TMP117 and MAX30102 after I2C is ready. |
 | REQ-SYS-04 | The firmware shall report the result of each sensor initialisation over UART (`OK` or `FAIL`) before entering the measurement loop. |
 | REQ-SYS-05 | The firmware shall enter the measurement loop regardless of sensor initialisation result. A failed sensor shall not halt the system. |
+| REQ-SYS-06 | The firmware shall configure SysTick to generate an interrupt every 1 ms using the 4 MHz processor clock (reload value = 3999). The SysTick handler shall increment a `volatile uint32_t` tick counter on each interrupt. `systick_init()` shall be called before any other peripheral initialisation. |
+| REQ-SYS-07 | The firmware shall enable the Independent Watchdog (IWDG) with a 4-second timeout. The IWDG shall be initialised after SysTick and before any other peripheral. The main loop shall reload the watchdog on every iteration. |
 
 ### 2.2 UART
 
@@ -156,12 +158,10 @@ Items explicitly outside the scope of the current firmware. Not unmet requiremen
 | SpO2 (blood oxygen) calculation | Out of scope | Requires calibrated coefficients, validated algorithm, regulatory approval |
 | Clinical heart rate (BPM) | `[FUTURE]` | Requires peak detection on PPG waveform |
 | FreeRTOS or any RTOS | `[FUTURE]` | Planned extension phase |
-| Watchdog timer (IWDG/WWDG) | `[FUTURE]` | Planned extension phase |
 | Low-power sleep modes (STOP2) | `[FUTURE]` | Planned extension phase |
-| SysTick-based calibrated delay | `[FUTURE]` | Current delay() is a count-down loop |
 | I2C bus recovery (9-clock unstick) | `[FUTURE]` | Planned extension phase |
 | Non-volatile storage | Out of scope | No SD card or EEPROM on current hardware |
-| Timestamps on readings | `[FUTURE]` | Requires SysTick or RTC |
+| Timestamps on readings | `[FUTURE]` | Requires RTC or UART timestamp from get_tick() |
 | MISRA-C compliance assessment | `[FUTURE]` | See docs/misra.md when complete |
 
 ---

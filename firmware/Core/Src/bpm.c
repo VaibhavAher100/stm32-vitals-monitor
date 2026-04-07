@@ -1,5 +1,6 @@
 #include "bpm.h"
-#include "systick.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 void bpm_init(BpmDetector *b)
 {
@@ -67,7 +68,7 @@ void bpm_update(BpmDetector *b, uint32_t ir_filt)
 
     /* Detect rising-edge threshold crossing: prev below, current at or above */
     if((b->prev_val < threshold) && (ir_filt >= threshold)) { /* Rule 14.4 */
-        now = get_tick();
+        now = (uint32_t)xTaskGetTickCount();
 
         if(b->cross_count == 0U) {
             /* First crossing — record timestamp, nothing to measure yet */

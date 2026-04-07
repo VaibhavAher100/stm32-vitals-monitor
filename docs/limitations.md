@@ -44,17 +44,17 @@ This is not a clinically validated heart rate measurement. Known gaps:
 
 ## Hardware Limitations
 
-### No Real-Time Operating System (RTOS)
+### FreeRTOS Task Scheduling - No Preemption Tuning
 
-This project runs on bare-metal firmware with no RTOS scheduler.
-Tasks execute sequentially in a single main loop.
+Phase 4 splits the main loop into two FreeRTOS tasks communicating via a depth-1 queue:
+- `task_sensor` (priority 2): reads sensors, filters, detects BPM, kicks IWDG every 500 ms
+- `task_uart` (priority 1): blocks on queue, formats and transmits UART output
 
-Implications:
-- Sensor reads block the loop — if a sensor hangs, the entire system halts
-- No guaranteed timing between sensor reads
-- No concurrent task execution
-
-A FreeRTOS extension is planned as a future phase of this project to address these constraints.
+Known gaps at this priority/configuration:
+- Stack sizes are conservatively fixed; no runtime high-water mark monitoring
+- No deadlock detection or task watchdog per task (only system-level IWDG)
+- IWDG is kicked inside task_sensor only - a task_uart hang would not be caught
+- FreeRTOS heap_4 allocator; heap exhaustion causes configASSERT halt, not graceful recovery
 
 ### No Power Management
 

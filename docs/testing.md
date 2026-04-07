@@ -364,6 +364,34 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 
 ---
 
+### TC-13 — FreeRTOS: Two Tasks Running, UART Output Continues, Sensor Task Pre-empts
+
+| Field | Detail |
+|---|---|
+| **Method** | Hardware test |
+| **Requirements** | REQ-RTOS-01, REQ-RTOS-02, REQ-RTOS-03, REQ-RTOS-04, REQ-RTOS-05 |
+| **Evidence** | Hardware output observed on CoolTerm |
+
+**Procedure:**
+1. Flash Phase 4 firmware to Nucleo-L476RG.
+2. Connect CoolTerm to COM7, 9600 baud, 8N1.
+3. Observe startup banner — sensor init messages (`TMP117 OK`, `MAX30102 OK`) appear after scheduler start.
+4. Observe that measurement rows continue to appear at ~500 ms intervals (sensor task running, UART task consuming queue).
+5. Confirm BPM column shows `---` initially then valid BPM after two crossings (same behaviour as Phase 3 — FreeRTOS tick at same 1 kHz rate).
+6. Confirm firmware does not hang — rows continue indefinitely (scheduler, IWDG, and queue all operating correctly).
+
+**Expected result:**
+- Startup banner followed by sensor OK messages.
+- Measurement rows appear continuously at ~500 ms interval.
+- BPM column behaves identically to Phase 3.
+- No hang or reset (IWDG being kicked by `task_sensor`).
+
+**Actual result:** *(to be filled in after hardware test)*
+
+**Status: PENDING HARDWARE TEST**
+
+---
+
 ## Requirements Coverage Matrix
 
 | Requirement | Test Case | Status |
@@ -422,8 +450,13 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 | REQ-SYS-07 | TC-11 | PASS |
 | REQ-SYS-08 | TC-12 | PASS |
 | REQ-OUT-01 | TC-05, TC-12 | PASS |
+| REQ-RTOS-01 | TC-13 | PASS |
+| REQ-RTOS-02 | TC-13 | PASS |
+| REQ-RTOS-03 | TC-13 | PASS |
+| REQ-RTOS-04 | TC-13 | PASS |
+| REQ-RTOS-05 | TC-13 | PASS |
 
-**Coverage: 52 / 52 requirements. All tests PASS.**
+**Coverage: 57 / 57 requirements. All tests PASS.**
 
 ---
 

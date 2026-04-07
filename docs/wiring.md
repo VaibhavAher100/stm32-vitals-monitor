@@ -1,6 +1,6 @@
-# Wiring Reference — STM32 Vitals Monitor
+# Wiring Reference - STM32 Vitals Monitor
 
-## Safety Rules — Read Before Wiring
+## Safety Rules - Read Before Wiring
 
 1. **Always unplug the USB cable before connecting or disconnecting any wires.**
    Hot-wiring with incorrect connections can permanently damage the sensor or the Nucleo board.
@@ -22,7 +22,7 @@
 
 The Nucleo board has two main connector rows: **CN5** (top) and **CN6** (bottom right).
 
-### CN5 — Left connector (Arduino-compatible)
+### CN5 - Left connector (Arduino-compatible)
 
 ```
 CN5 Pin 1  →  PB8  / D15  (I2C1_SCL)
@@ -37,7 +37,7 @@ CN5 Pin 9  →  PC7  / D9
 CN5 Pin 10 →  PA9  / D8
 ```
 
-### CN6 — Right connector (Power)
+### CN6 - Right connector (Power)
 
 ```
 CN6 Pin 1  →  PC10 / D0
@@ -52,7 +52,7 @@ CN6 Pin 8  →  PA15
 
 ---
 
-## TMP117 — Temperature Sensor
+## TMP117 - Temperature Sensor
 
 **I2C Address:** 0x49 (Soldered Electronics breakout default)
 
@@ -91,7 +91,7 @@ If "TMP117 not detected" appears: unplug USB, recheck all 4 wires, confirm SDA/S
 
 ---
 
-## MAX30102 — Heart Rate and SpO2 Sensor
+## MAX30102 - Heart Rate and SpO2 Sensor
 
 **I2C Address:** 0x57
 **Important:** Shares the same I2C bus (SDA and SCL wires) as the TMP117.
@@ -105,11 +105,11 @@ This is normal I2C bus behaviour. Both sensors are distinguished by their addres
 | GND | GND | CN6 Pin 6 | Black | Shared GND rail with TMP117 |
 | SDA | PB9 | CN5 Pin 2 | Blue | Shared SDA with TMP117 |
 | SCL | PB8 | CN5 Pin 1 | Yellow | Shared SCL with TMP117 |
-| INT | Not connected | — | — | Interrupt pin — not used in this phase |
-| IRD | Not connected | — | — | IR LED ground — internal, no connection needed |
-| RD | Not connected | — | — | Red LED ground — internal, no connection needed |
+| INT | Not connected | - | - | Interrupt pin - not used in this phase |
+| IRD | Not connected | - | - | IR LED ground - internal, no connection needed |
+| RD | Not connected | - | - | Red LED ground - internal, no connection needed |
 
-### Wiring Diagram (Text) — Both Sensors Connected
+### Wiring Diagram (Text) - Both Sensors Connected
 
 ```
 TMP117 Breakout          Nucleo-L476RG           MAX30102 Breakout
@@ -138,7 +138,7 @@ IR raw: 45187
 
 Use the 400-point mini breadboard to organise connections:
 
-1. Place both sensor breakout boards on the breadboard — one on each side
+1. Place both sensor breakout boards on the breadboard - one on each side
 2. Use the breadboard power rails to distribute 3.3V and GND
 3. Connect CN6 Pin 4 (3.3V) to the positive power rail
 4. Connect CN6 Pin 6 (GND) to the negative power rail

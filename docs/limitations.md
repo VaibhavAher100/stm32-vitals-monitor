@@ -1,4 +1,4 @@
-# Limitations — STM32 Vitals Monitor
+# Limitations - STM32 Vitals Monitor
 
 This document records all known limitations, constraints, and design boundaries of this project.
 Acknowledging limitations is a mark of engineering rigour, not weakness.
@@ -12,7 +12,7 @@ Every limitation listed here was a deliberate scope decision, not an oversight.
 
 **This project does not produce clinically valid SpO2 (blood oxygen saturation) readings.**
 
-The MAX30102 sensor reads raw photoplethysmographic (PPG) data — the change in light absorption
+The MAX30102 sensor reads raw photoplethysmographic (PPG) data - the change in light absorption
 caused by pulsatile blood flow. Converting raw PPG data to a calibrated SpO2 percentage requires:
 
 - Empirical calibration coefficients derived from measurements on human subjects
@@ -33,7 +33,7 @@ with a 333 ms refractory period to suppress noise.
 
 This is not a clinically validated heart rate measurement. Known gaps:
 
-- No motion artefact rejection — movement corrupts the PPG waveform
+- No motion artefact rejection - movement corrupts the PPG waveform
 - No stabilisation window before reporting (first valid pair triggers output)
 - Threshold derived from a rolling 8-sample min/max window, not an absolute calibrated reference
 - Not tested against a reference pulse oximeter
@@ -65,6 +65,16 @@ Power consumption in active mode is approximately 1 mA at 4 MHz.
 A production medical device would implement sleep modes between sensor reads
 to reduce average consumption to microamps.
 
+=======
+### No Watchdog Timer
+
+A watchdog timer (IWDG or WWDG) is not implemented.
+If the firmware hangs - for example, due to an I2C bus lock-up - the system will not
+automatically recover. A hard reset (RESET button) is required.
+
+Watchdog implementation is planned for a future phase.
+
+>>>>>>> 8c49b94 (docs: fix em dashes and mark TC-13 PASS)
 ### Single I2C Bus, No Error Recovery
 
 Both sensors share I2C1. If one sensor holds the SDA line LOW (a known failure mode),
@@ -135,6 +145,7 @@ The following are explicitly out of scope for this project and are not treated a
 
 ---
 
+<<<<<<< HEAD
 *Last updated: April 2026*
-*Project: STM32 Vitals Monitor — Bare-Metal Firmware*
-*Author: Vaibhav Aher — M.Sc. ICT, FAU Erlangen-Nürnberg*
+*Project: STM32 Vitals Monitor - Bare-Metal Firmware*
+*Author: Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg*

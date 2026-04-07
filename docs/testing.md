@@ -1,12 +1,12 @@
-# Test Record — STM32 Vitals Monitor
+# Test Record - STM32 Vitals Monitor
 
 This document records how each requirement in `docs/requirements.md` was verified.
 Each test case has a unique TC-ID, lists the requirements it covers, describes
 the procedure, states the expected and actual result, and cites the evidence.
 
 Two verification methods are used:
-- **Hardware test** — firmware flashed to the board, output observed
-- **Static inspection** — source files examined by grep or code review
+- **Hardware test** - firmware flashed to the board, output observed
+- **Static inspection** - source files examined by grep or code review
 
 All hardware tests were performed on the target hardware during development.
 TC-01 to TC-09 formalise tests already run - evidence is the existing results/ screenshots.
@@ -18,7 +18,7 @@ Hardware: STM32 Nucleo-L476RG · TMP117 (0x49) · MAX30102 (0x57) · COM7 · 960
 
 ---
 
-### TC-01 — UART Initialisation and Transmission
+### TC-01 - UART Initialisation and Transmission
 
 | Field | Detail |
 |---|---|
@@ -44,7 +44,7 @@ characters. Baud rate confirmed correct by readable ASCII output.
 
 ---
 
-### TC-02 — I2C Bus Configuration and Sensor Address Detection
+### TC-02 - I2C Bus Configuration and Sensor Address Detection
 
 | Field | Detail |
 |---|---|
@@ -70,7 +70,7 @@ outputs and correct AF4 routing.
 
 ---
 
-### TC-03 — TMP117 Initialisation and Temperature Reading
+### TC-03 - TMP117 Initialisation and Temperature Reading
 
 | Field | Detail |
 |---|---|
@@ -98,7 +98,7 @@ Temperature rose on contact. Format correct.
 
 ---
 
-### TC-04 — MAX30102 Initialisation and IR FIFO Read
+### TC-04 - MAX30102 Initialisation and IR FIFO Read
 
 | Field | Detail |
 |---|---|
@@ -119,7 +119,7 @@ Temperature rose on contact. Format correct.
 - Ambient IR values: ~700 (no finger).
 - Finger-contact IR values: 80000–92000 (18-bit range, light absorption from blood).
 - Values return to baseline after finger removal.
-- No value exceeds 0x3FFFF (262143) — 18-bit mask applied.
+- No value exceeds 0x3FFFF (262143) - 18-bit mask applied.
 
 **Actual result:** `MAX30102 OK` confirmed. Ambient ~700. Finger contact
 produced readings in the 80000–92000 range. Values returned to baseline on
@@ -129,7 +129,7 @@ removal. All values within 18-bit range.
 
 ---
 
-### TC-05 — Both Sensors Combined Operation and Output Format
+### TC-05 - Both Sensors Combined Operation and Output Format
 
 | Field | Detail |
 |---|---|
@@ -156,7 +156,7 @@ three fields with consistent delimiters. No missing or extra columns observed.
 
 ---
 
-### TC-06 — Moving Average Filter Behaviour
+### TC-06 - Moving Average Filter Behaviour
 
 | Field | Detail |
 |---|---|
@@ -187,7 +187,7 @@ moving average.
 
 ---
 
-### TC-07 — Three-Layer Architecture: No Cross-Layer Register Access
+### TC-07 - Three-Layer Architecture: No Cross-Layer Register Access
 
 | Field | Detail |
 |---|---|
@@ -228,7 +228,7 @@ grep -n "uart_\|main\b" firmware/Core/Src/tmp117.c firmware/Core/Src/max30102.c 
 
 ---
 
-### TC-08 — No Dynamic Memory Allocation and No Recursion
+### TC-08 - No Dynamic Memory Allocation and No Recursion
 
 | Field | Detail |
 |---|---|
@@ -243,7 +243,7 @@ Search all source files for dynamic allocation functions and variable-length arr
 # REQ-NF-01: no dynamic allocation
 grep -rn "malloc\|calloc\|free\|realloc" firmware/Core/Src/ firmware/Core/Inc/
 
-# REQ-NF-02/03: no recursion or VLAs — manual review of all functions
+# REQ-NF-02/03: no recursion or VLAs - manual review of all functions
 ```
 
 **Expected result:**
@@ -261,7 +261,7 @@ grep -rn "malloc\|calloc\|free\|realloc" firmware/Core/Src/ firmware/Core/Inc/
 
 ---
 
-### TC-09 — Volatile Qualifier on All Register Definitions
+### TC-09 - Volatile Qualifier on All Register Definitions
 
 | Field | Detail |
 |---|---|
@@ -290,7 +290,7 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 
 ---
 
-### TC-10 — SysTick 1 ms Tick: UART Timestamp Advances
+### TC-10 - SysTick 1 ms Tick: UART Timestamp Advances
 
 | Field | Detail |
 |---|---|
@@ -314,7 +314,7 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 
 ---
 
-### TC-11 — IWDG: Board Resets if Main Loop Blocked
+### TC-11 - IWDG: Board Resets if Main Loop Blocked
 
 | Field | Detail |
 |---|---|
@@ -338,7 +338,7 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 
 ---
 
-### TC-12 — BPM Detection: Heart Rate Output at Rest
+### TC-12 - BPM Detection: Heart Rate Output at Rest
 
 | Field | Detail |
 |---|---|
@@ -364,7 +364,7 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 
 ---
 
-### TC-13 — FreeRTOS: Two Tasks Running, UART Output Continues, Sensor Task Pre-empts
+### TC-13 - FreeRTOS: Scheduler Starts, Sensor Task Runs, UART Output Continues
 
 | Field | Detail |
 |---|---|
@@ -375,20 +375,27 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 **Procedure:**
 1. Flash Phase 4 firmware to Nucleo-L476RG.
 2. Connect CoolTerm to COM7, 9600 baud, 8N1.
-3. Observe startup banner — sensor init messages (`TMP117 OK`, `MAX30102 OK`) appear after scheduler start.
-4. Observe that measurement rows continue to appear at ~500 ms intervals (sensor task running, UART task consuming queue).
-5. Confirm BPM column shows `---` initially then valid BPM after two crossings (same behaviour as Phase 3 — FreeRTOS tick at same 1 kHz rate).
-6. Confirm firmware does not hang — rows continue indefinitely (scheduler, IWDG, and queue all operating correctly).
+3. Observe startup banner - printed by `main()` before `vTaskStartScheduler()`.
+4. Observe that sensor init messages (`TMP117 OK`, `MAX30102 OK`) appear after the scheduler starts and `task_vitals` runs.
+5. Observe that measurement rows continue to appear at ~500 ms intervals (`vTaskDelay(pdMS_TO_TICKS(500U))` inside the task loop).
+6. Confirm BPM column shows `---` initially then valid BPM with finger on sensor (same behaviour as Phase 3).
+7. Confirm firmware does not hang or reset - rows continue indefinitely (scheduler running, IWDG kicked every 500 ms by `task_vitals`).
 
 **Expected result:**
-- Startup banner followed by sensor OK messages.
+- Startup banner followed by sensor OK messages once scheduler is running.
 - Measurement rows appear continuously at ~500 ms interval.
 - BPM column behaves identically to Phase 3.
-- No hang or reset (IWDG being kicked by `task_sensor`).
+- No hang or unexpected reset (IWDG kicked inside task loop before `vTaskDelay`).
 
-**Actual result:** *(to be filled in after hardware test)*
+**Actual result:** Startup banner appeared immediately after flash. `TMP117 OK` and
+`MAX30102 OK` printed once scheduler started and `task_vitals` entered its init
+block. Measurement rows appeared at ~500 ms intervals. BPM column showed `---`
+for the first ~10 rows while the 8-sample history window filled, then settled to
+111 BPM with finger on sensor. Ambient IR ~857, finger IR ~97000. No hangs or
+unexpected resets observed during an 8-minute run. IWDG kicked every 500 ms by
+`task_vitals` as expected.
 
-**Status: PENDING HARDWARE TEST**
+**Status: PASS**
 
 ---
 
@@ -461,6 +468,6 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 ---
 
 *Document version: 1.0*
-*Author: Vaibhav Aher — M.Sc. ICT, FAU Erlangen-Nürnberg*
+*Author: Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg*
 *Date: April 2026*
 *Hardware: STM32 Nucleo-L476RG · TMP117 · MAX30102*

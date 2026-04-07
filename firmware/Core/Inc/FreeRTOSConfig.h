@@ -42,6 +42,6 @@
 #define INCLUDE_vTaskDelay                  1
 #define INCLUDE_vTaskDelete                 0
 #define INCLUDE_vTaskSuspend                0
-#define INCLUDE_xTaskGetCurrentTaskHandle   0
+#define INCLUDE_xTaskGetCurrentTaskHandle   1
 
 #endif /* FREERTOS_CONFIG_H */

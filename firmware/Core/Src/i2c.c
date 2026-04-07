@@ -16,8 +16,8 @@
 #define I2C1_TXDR     (*((volatile uint32_t*)0x40005428))
 #define I2C1_RXDR     (*((volatile uint32_t*)0x40005424))
 
-/* Busy-wait used only during i2c_init() before the scheduler starts.
-   At 4 MHz MSI: ~4000 cycles per ms. Used nowhere else. */
+/* Busy-wait used only inside i2c_init(), which runs before the scheduler starts.
+   At 4 MHz MSI: ~4000 cycles per ms. */
 static void busy_delay_ms(uint32_t ms)
 {
     volatile uint32_t i;
@@ -54,11 +54,11 @@ uint8_t i2c_write_reg(uint8_t addr, uint8_t reg, uint8_t val)
     I2C1_CR2 |= (1U << 13);
     timeout = 50000U;
     while(!(I2C1_ISR & (1U << 1)) && timeout--) {}
-    if(!timeout) { return 0U; }                    /* Rule 15.6: braces on if body */
+    if(!timeout) { return 0U; }
     I2C1_TXDR = reg;
     timeout = 50000U;
     while(!(I2C1_ISR & (1U << 1)) && timeout--) {}
-    if(!timeout) { return 0U; }                    /* Rule 15.6 */
+    if(!timeout) { return 0U; }
     I2C1_TXDR = val;
     timeout = 50000U;
     while(!(I2C1_ISR & (1U << 5)) && timeout--) {}

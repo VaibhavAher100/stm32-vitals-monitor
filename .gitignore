@@ -1,9 +1,12 @@
 
 # STM32CubeIDE workspace & metadata
+.metadata/
 firmware/.metadata/
 firmware/**/.settings/
 
 # Build outputs
+firmware/Debug/
+firmware/Release/
 firmware/Core/Debug/
 firmware/Core/Release/
 

@@ -30,8 +30,14 @@ objects.list
 *.launch
 .settings/
 
+# STM32CubeIDE project metadata
+.cproject
+.project
+.metadata/
+
 # Local docs (not for repo)
 docs/*.docx
+SESSION_LOG.md
 
 # OS artifacts
 Thumbs.db

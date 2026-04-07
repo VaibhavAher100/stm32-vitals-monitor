@@ -1,4 +1,4 @@
-# Software Requirements Specification — STM32 Vitals Monitor
+# Software Requirements Specification - STM32 Vitals Monitor
 
 This document defines the requirements that the current firmware implements.
 Each requirement has a unique ID so that test cases (TESTING.md) and design
@@ -15,7 +15,7 @@ Section 5 (Out of Scope) and marked `[FUTURE]`.
 Bare-metal firmware on an STM32L476RG (Cortex-M4, 4 MHz MSI clock). Reads
 temperature from a TMP117 sensor and raw infrared (IR) data from a MAX30102
 sensor over I2C. Applies a moving average filter to the IR data. Transmits
-results over UART. All peripheral configuration is register-level — no HAL,
+results over UART. All peripheral configuration is register-level - no HAL,
 no CubeMX.
 
 **Hardware:** STM32 Nucleo-L476RG · TMP117 breakout (I2C 0x49) · MAX30102
@@ -90,7 +90,7 @@ breakout (I2C 0x57) · shared I2C1 bus on PB8/PB9.
 |---|---|
 | REQ-FIL-01 | The firmware shall apply a moving average filter to raw IR values before output. |
 | REQ-FIL-02 | The filter window shall be 8 samples (`FILTER_WINDOW = 8` in filter.h). |
-| REQ-FIL-03 | The filter shall use a circular buffer with a running sum, updating in O(1) per sample — no full recomputation of the sum on each call. |
+| REQ-FIL-03 | The filter shall use a circular buffer with a running sum, updating in O(1) per sample - no full recomputation of the sum on each call. |
 | REQ-FIL-04 | On each update, the value being replaced shall be subtracted from the running sum before the new value is added. |
 | REQ-FIL-05 | The returned average shall divide the running sum by the number of valid samples collected so far, not by `FILTER_WINDOW`, until the buffer is full. |
 | REQ-FIL-06 | `filter_init()` shall zero all buffer slots, the write index, the count, and the running sum. |
@@ -108,6 +108,16 @@ breakout (I2C 0x57) · shared I2C1 bus on PB8/PB9.
 | REQ-OUT-01 | Each measurement cycle shall output one row containing four fields: temperature (°C), raw IR value, filtered IR value, and BPM. BPM shall be shown as a decimal integer or `---` if not yet valid. |
 | REQ-OUT-02 | Output columns shall be separated by ` \| ` delimiters, consistent with the header row transmitted at startup. |
 | REQ-OUT-03 | Each output row shall be terminated with `\r\n`. |
+
+### 2.9 RTOS Task Architecture
+
+| ID | Requirement |
+|---|---|
+| REQ-RTOS-01 | The firmware shall run FreeRTOS V10.5.1 (vendored kernel source, MIT license). The kernel shall be compiled from source; no pre-built library shall be used. |
+| REQ-RTOS-02 | The application shall be split into two FreeRTOS tasks: `task_sensor` (priority 2) and `task_uart` (priority 1). No bare `for(;;)` loop shall exist in `main()`. |
+| REQ-RTOS-03 | `task_sensor` shall read sensors, apply the moving average filter, run the BPM detector, and send a `VitalsMsg` to a FreeRTOS queue every 500 ms using `vTaskDelay(pdMS_TO_TICKS(500U))`. |
+| REQ-RTOS-04 | `task_uart` shall block on the queue using `xQueueReceive(..., portMAX_DELAY)` and transmit one UART row per message received. |
+| REQ-RTOS-05 | The IWDG shall be kicked inside `task_sensor` after each sensor read. A hung sensor task shall cause a watchdog reset within the IWDG timeout window. |
 
 ---
 
@@ -162,8 +172,8 @@ Items explicitly outside the scope of the current firmware. Not unmet requiremen
 | Item | Status | Note |
 |---|---|---|
 | SpO2 (blood oxygen) calculation | Out of scope | Requires calibrated coefficients, validated algorithm, regulatory approval |
-| Clinical heart rate (BPM) | Implemented | REQ-SYS-08 — dynamic threshold peak detector in bpm.c |
-| FreeRTOS or any RTOS | `[FUTURE]` | Planned extension phase |
+| Clinical heart rate (BPM) | Implemented | REQ-SYS-08 - dynamic threshold peak detector in bpm.c |
+| FreeRTOS or any RTOS | Implemented | Phase 4 - see REQ-RTOS-01 through REQ-RTOS-05 |
 | Low-power sleep modes (STOP2) | `[FUTURE]` | Planned extension phase |
 | I2C bus recovery (9-clock unstick) | `[FUTURE]` | Planned extension phase |
 | Non-volatile storage | Out of scope | No SD card or EEPROM on current hardware |
@@ -174,6 +184,6 @@ Items explicitly outside the scope of the current firmware. Not unmet requiremen
 
 *Document version: 1.0*
 *Firmware: post-refactor, 3-layer architecture*
-*Author: Vaibhav Aher — M.Sc. ICT, FAU Erlangen-Nürnberg*
+*Author: Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg*
 *Date: April 2026*
 *References: RM0351 · TMP117 datasheet (Texas Instruments) · MAX30102 datasheet (Analog Devices)*

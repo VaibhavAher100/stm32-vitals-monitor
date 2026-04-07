@@ -1,4 +1,4 @@
-# Limitations — STM32 Vitals Monitor
+# Limitations - STM32 Vitals Monitor
 
 This document records all known limitations, constraints, and design boundaries of this project.
 Acknowledging limitations is a mark of engineering rigour, not weakness.
@@ -12,7 +12,7 @@ Every limitation listed here was a deliberate scope decision, not an oversight.
 
 **This project does not produce clinically valid SpO2 (blood oxygen saturation) readings.**
 
-The MAX30102 sensor reads raw photoplethysmographic (PPG) data — the change in light absorption
+The MAX30102 sensor reads raw photoplethysmographic (PPG) data - the change in light absorption
 caused by pulsatile blood flow. Converting raw PPG data to a calibrated SpO2 percentage requires:
 
 - Empirical calibration coefficients derived from measurements on human subjects
@@ -33,7 +33,7 @@ with a 333 ms refractory period to suppress noise.
 
 This is not a clinically validated heart rate measurement. Known gaps:
 
-- No motion artefact rejection — movement corrupts the PPG waveform
+- No motion artefact rejection - movement corrupts the PPG waveform
 - No stabilisation window before reporting (first valid pair triggers output)
 - Threshold derived from a rolling 8-sample min/max window, not an absolute calibrated reference
 - Not tested against a reference pulse oximeter
@@ -44,17 +44,17 @@ This is not a clinically validated heart rate measurement. Known gaps:
 
 ## Hardware Limitations
 
-### No Real-Time Operating System (RTOS)
+### FreeRTOS Task Scheduling - No Preemption Tuning
 
-This project runs on bare-metal firmware with no RTOS scheduler.
-Tasks execute sequentially in a single main loop.
+Phase 4 splits the main loop into two FreeRTOS tasks communicating via a depth-1 queue:
+- `task_sensor` (priority 2): reads sensors, filters, detects BPM, kicks IWDG every 500 ms
+- `task_uart` (priority 1): blocks on queue, formats and transmits UART output
 
-Implications:
-- Sensor reads block the loop — if a sensor hangs, the entire system halts
-- No guaranteed timing between sensor reads
-- No concurrent task execution
-
-A FreeRTOS extension is planned as a future phase of this project to address these constraints.
+Known gaps at this priority/configuration:
+- Stack sizes are conservatively fixed; no runtime high-water mark monitoring
+- No deadlock detection or task watchdog per task (only system-level IWDG)
+- IWDG is kicked inside task_sensor only - a task_uart hang would not be caught
+- FreeRTOS heap_4 allocator; heap exhaustion causes configASSERT halt, not graceful recovery
 
 ### No Power Management
 
@@ -136,5 +136,5 @@ The following are explicitly out of scope for this project and are not treated a
 ---
 
 *Last updated: April 2026*
-*Project: STM32 Vitals Monitor — Bare-Metal Firmware*
-*Author: Vaibhav Aher — M.Sc. ICT, FAU Erlangen-Nürnberg*
+*Project: STM32 Vitals Monitor - Bare-Metal Firmware*
+*Author: Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg*

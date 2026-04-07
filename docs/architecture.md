@@ -1,14 +1,14 @@
-# Architecture — STM32 Vitals Monitor
+# Architecture - STM32 Vitals Monitor
 
 ## Overview
 
 This project follows a deliberate two-phase development strategy:
 
-1. **Prototype phase** — All code in `main.c`. Every peripheral driver, signal processing
+1. **Prototype phase** - All code in `main.c`. Every peripheral driver, signal processing
    function, and application logic lives in one file. This phase prioritises getting verified
    hardware output before introducing structural complexity.
 
-2. **Refactor phase** — Once all sensors produce clean verified output, the monolithic `main.c`
+2. **Refactor phase** - Once all sensors produce clean verified output, the monolithic `main.c`
    is split into a three-layer architecture. The refactor commit in the Git history marks this
    transition explicitly.
 
@@ -56,7 +56,7 @@ behind architectural decisions rather than presenting only the final polished re
 
 ---
 
-## Layer Rules — Non-Negotiable
+## Layer Rules - Non-Negotiable
 
 These rules are enforced at the refactor stage and maintained throughout:
 
@@ -73,12 +73,12 @@ These rules are enforced at the refactor stage and maintained throughout:
 
 ```
 firmware/Core/Src/
-├── main.c           Application layer — system init, main loop, output
-├── uart.c           UART driver — register-level USART2 configuration and transmit
-├── i2c.c            I2C driver — register-level I2C1 configuration, read/write
-├── tmp117.c         TMP117 driver — sensor init, register read, temperature conversion
-├── max30102.c       MAX30102 driver — sensor init, FIFO read, raw IR data
-├── filter.c         Processing layer — circular buffer moving average filter
+├── main.c           Application layer - system init, main loop, output
+├── uart.c           UART driver - register-level USART2 configuration and transmit
+├── i2c.c            I2C driver - register-level I2C1 configuration, read/write
+├── tmp117.c         TMP117 driver - sensor init, register read, temperature conversion
+├── max30102.c       MAX30102 driver - sensor init, FIFO read, raw IR data
+├── filter.c         Processing layer - circular buffer moving average filter
 ├── syscalls.c       System call stubs (auto-generated, do not modify)
 └── sysmem.c         Memory management stubs (auto-generated, do not modify)
 
@@ -125,7 +125,7 @@ a microcontroller with 128KB RAM and no memory protection unit (MPU) active.
 Every register access uses `volatile uint32_t*` casting.
 
 Reason: Without `volatile`, the compiler may optimise away register writes it cannot
-observe side effects from — for example, polling a status bit in a loop.
+observe side effects from - for example, polling a status bit in a loop.
 
 ---
 

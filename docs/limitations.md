@@ -65,16 +65,6 @@ Power consumption in active mode is approximately 1 mA at 4 MHz.
 A production medical device would implement sleep modes between sensor reads
 to reduce average consumption to microamps.
 
-=======
-### No Watchdog Timer
-
-A watchdog timer (IWDG or WWDG) is not implemented.
-If the firmware hangs - for example, due to an I2C bus lock-up - the system will not
-automatically recover. A hard reset (RESET button) is required.
-
-Watchdog implementation is planned for a future phase.
-
->>>>>>> 8c49b94 (docs: fix em dashes and mark TC-13 PASS)
 ### Single I2C Bus, No Error Recovery
 
 Both sensors share I2C1. If one sensor holds the SDA line LOW (a known failure mode),
@@ -145,7 +135,6 @@ The following are explicitly out of scope for this project and are not treated a
 
 ---
 
-<<<<<<< HEAD
 *Last updated: April 2026*
 *Project: STM32 Vitals Monitor - Bare-Metal Firmware*
 *Author: Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg*

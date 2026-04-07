@@ -1,4 +1,4 @@
-# MISRA-C:2012 Analysis — STM32 Vitals Monitor
+# MISRA-C:2012 Analysis - STM32 Vitals Monitor
 
 ## Tool
 
@@ -46,7 +46,7 @@ Rules 10.4, 15.6, 17.7, 17.8, 5.9, 8.7 no longer appear in output.
 
 ---
 
-### Rule 11.4 — Conversion between pointer to object and integer type (26 findings)
+### Rule 11.4 - Conversion between pointer to object and integer type (26 findings)
 
 **Location:** All register macro definitions in `uart.c`, `i2c.c`, `max30102.c`.
 
@@ -69,12 +69,12 @@ addresses the primary safety concern of rule 11.4 (unexpected compiler optimisat
 of hardware-visible side effects).
 
 **Risk assessment:** Low. Addresses are verified against RM0351. No arithmetic is
-performed on the pointers — they are used exclusively for single read/write
+performed on the pointers - they are used exclusively for single read/write
 operations.
 
 ---
 
-### Rule 12.2 — Operands of shift operators (43 findings)
+### Rule 12.2 - Operands of shift operators (43 findings)
 
 **Location:** Register bit manipulation throughout `uart.c`, `i2c.c`, `max30102.c`.
 
@@ -100,9 +100,9 @@ definitions that add no clarity and increase the maintenance surface.
 
 ---
 
-### Rule 13.3 — Side effects in increment/decrement expressions (1 finding)
+### Rule 13.3 - Side effects in increment/decrement expressions (1 finding)
 
-**Location:** `uart.c:39` — `uart_int()` function.
+**Location:** `uart.c:39` - `uart_int()` function.
 
 **Example:**
 ```c
@@ -122,7 +122,7 @@ and the output is verified by TC-01.
 
 ---
 
-### Rule 13.5 — Side effects in the right-hand side of `&&` or `||` (22 findings)
+### Rule 13.5 - Side effects in the right-hand side of `&&` or `||` (22 findings)
 
 **Location:** I2C polling loops in `i2c.c` and `max30102.c`.
 
@@ -140,7 +140,7 @@ well-defined: C evaluates `&&` left-to-right with short-circuit semantics, so
 has not yet been set). When the flag is set, the loop exits before `timeout--`
 fires.
 
-The alternative — a separate decrement inside the loop body — requires more
+The alternative - a separate decrement inside the loop body - requires more
 lines, an additional `if(!timeout) break;` statement, and makes the timeout
 intent less clear. In a safety-critical production context, the refactored
 form would be preferred. For this project, the pattern is acceptable and is
@@ -151,7 +151,7 @@ cycles per polling loop. Documented as a known limitation in `docs/limitations.m
 
 ---
 
-### Rule 14.4 — Condition not essentially Boolean (2 findings remaining)
+### Rule 14.4 - Condition not essentially Boolean (2 findings remaining)
 
 **Location:** `main.c:35` (`if(tmp117_init())`), `main.c:41` (`if(max30102_init())`).
 
@@ -175,9 +175,9 @@ is documented in the function contracts.
 
 ---
 
-### Rule 15.5 — A function should have a single point of exit (4 findings)
+### Rule 15.5 - A function should have a single point of exit (4 findings)
 
-**Location:** `i2c.c:47,51` — early returns on timeout in `i2c_write_reg()`.
+**Location:** `i2c.c:47,51` - early returns on timeout in `i2c_write_reg()`.
 
 **Example:**
 ```c
@@ -188,7 +188,7 @@ if(!timeout) return 0;
 **Deviation rationale:**
 The early return on timeout is an error-handling path, not a normal return.
 Restructuring to a single exit point would require either a flag variable
-and nested conditions, or a `goto` — both of which reduce readability in
+and nested conditions, or a `goto` - both of which reduce readability in
 this case. The function has two clearly defined exit points: success (`return 1`)
 at the bottom and timeout failure (`return 0`) on each polling step.
 
@@ -206,7 +206,7 @@ All fixes are in the dev branch.
 
 ---
 
-### Rule 15.6 — Single-statement body not enclosed in braces (11 findings — FIXED)
+### Rule 15.6 - Single-statement body not enclosed in braces (11 findings - FIXED)
 
 **Rule text:** The body of an iteration/selection statement shall be enclosed
 in braces.
@@ -234,12 +234,12 @@ if(tmp117_init() != 0U) {
 
 ---
 
-### Rule 17.7 — Return value of non-void function not used (8 findings — FIXED)
+### Rule 17.7 - Return value of non-void function not used (8 findings - FIXED)
 
 **Rule text:** The value returned by a function having non-void return type
 shall be used.
 
-**Files affected:** `max30102.c` — seven calls to `i2c_write_reg()` in
+**Files affected:** `max30102.c` - seven calls to `i2c_write_reg()` in
 `max30102_init()` where the return value was discarded.
 
 **Fix applied:** Cast each call to `(void)` to make the intent explicit:
@@ -256,7 +256,7 @@ i2c_write_reg(MAX30102_ADDR, REG_MODE, 0x40U);
 
 ---
 
-### Rule 17.8 — Function parameter should not be modified (6 findings — FIXED)
+### Rule 17.8 - Function parameter should not be modified (6 findings - FIXED)
 
 **Rule text:** A function parameter shall not be modified.
 
@@ -266,30 +266,30 @@ i2c_write_reg(MAX30102_ADDR, REG_MODE, 0x40U);
 **Fix applied:** Copy the parameter to a local variable before modifying it.
 
 ```c
-/* Before — delay functions */
+/* Before - delay functions */
 static void delay(volatile uint32_t n) { while(n--) {} }
 
-/* After — delay functions */
+/* After - delay functions */
 static void main_delay(volatile uint32_t n)
 {
     volatile uint32_t count = n;
     while(count-- != 0U) {}
 }
 
-/* Before — uart_str */
+/* Before - uart_str */
 void uart_str(const char *s) { while(*s) { uart_char(*s++); } }
 
-/* After — uart_str */
+/* After - uart_str */
 void uart_str(const char *s)
 {
     const char *p = s;
     while(*p != '\0') { uart_char(*p); p++; }
 }
 
-/* Before — uart_int */
+/* Before - uart_int */
 void uart_int(int32_t v) { if(v < 0) { uart_char('-'); v = -v; } ... v /= 10; }
 
-/* After — uart_int */
+/* After - uart_int */
 void uart_int(int32_t v)
 {
     int32_t val = v;
@@ -301,7 +301,7 @@ void uart_int(int32_t v)
 
 ---
 
-### Rule 5.9 — Duplicate identifier in same scope (3 findings — FIXED)
+### Rule 5.9 - Duplicate identifier in same scope (3 findings - FIXED)
 
 **Rule text:** Identifiers that define objects or functions with internal linkage
 should be unique.
@@ -316,12 +316,12 @@ Each function remains `static` with internal linkage.
 
 ---
 
-### Rule 8.7 — Object should be defined at block scope (1 finding — FIXED)
+### Rule 8.7 - Object should be defined at block scope (1 finding - FIXED)
 
 **Rule text:** Functions and objects should not be defined with external linkage
 if they are referenced in only one translation unit.
 
-**Files affected:** `uart_hex()` in `uart.c` — declared in `uart.h` with external
+**Files affected:** `uart_hex()` in `uart.c` - declared in `uart.h` with external
 linkage but never called from any translation unit.
 
 **Fix applied:** Removed `uart_hex()` from both `uart.c` and `uart.h`. The function
@@ -331,20 +331,20 @@ correct resolution.
 
 ---
 
-### Rule 10.4 — Type mismatch in arithmetic or comparison (5 findings — FIXED)
+### Rule 10.4 - Type mismatch in arithmetic or comparison (5 findings - FIXED)
 
 **Rule text:** Both operands of an operator in which the usual arithmetic
 conversions are performed shall have the same essential type.
 
-**Files affected:** `filter.c` — `uint8_t` loop counter compared against
-`FILTER_WINDOW` (unqualified integer constant); `uart.c` — `uint8_t` counter
+**Files affected:** `filter.c` - `uint8_t` loop counter compared against
+`FILTER_WINDOW` (unqualified integer constant); `uart.c` - `uint8_t` counter
 `i` compared against integer literal `0`, and `uint8_t` masked with plain
 hex literal `0xF`.
 
 **Fix applied:**
 - `filter.c`: Added `(uint8_t)` cast to `FILTER_WINDOW` uses; made constants
   unsigned with `U` suffix.
-- `uart.c:40`: Changed `while(i > 0)` to `while(i > 0U)` — matches `uint8_t i`.
+- `uart.c:40`: Changed `while(i > 0)` to `while(i > 0U)` - matches `uint8_t i`.
 - `uart.c:48`: Removed by deleting `uart_hex()` (see Rule 8.7 fix).
 
 ---
@@ -352,5 +352,5 @@ hex literal `0xF`.
 *Document version: 1.0*
 *Cppcheck version: 2.20.0*
 *Standard: MISRA C:2012*
-*Author: Vaibhav Aher — M.Sc. ICT, FAU Erlangen-Nürnberg*
+*Author: Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg*
 *Date: April 2026*

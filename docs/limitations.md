@@ -1,4 +1,4 @@
-# Limitations — STM32 Vitals Monitor
+# Limitations - STM32 Vitals Monitor
 
 This document records all known limitations, constraints, and design boundaries of this project.
 Acknowledging limitations is a mark of engineering rigour, not weakness.
@@ -12,7 +12,7 @@ Every limitation listed here was a deliberate scope decision, not an oversight.
 
 **This project does not produce clinically valid SpO2 (blood oxygen saturation) readings.**
 
-The MAX30102 sensor reads raw photoplethysmographic (PPG) data — the change in light absorption
+The MAX30102 sensor reads raw photoplethysmographic (PPG) data - the change in light absorption
 caused by pulsatile blood flow. Converting raw PPG data to a calibrated SpO2 percentage requires:
 
 - Empirical calibration coefficients derived from measurements on human subjects
@@ -45,7 +45,7 @@ This project runs on bare-metal firmware with no RTOS scheduler.
 Tasks execute sequentially in a single main loop.
 
 Implications:
-- Sensor reads block the loop — if a sensor hangs, the entire system halts
+- Sensor reads block the loop - if a sensor hangs, the entire system halts
 - No guaranteed timing between sensor reads
 - No concurrent task execution
 
@@ -78,7 +78,7 @@ to reduce average consumption to microamps.
 ### No Watchdog Timer
 
 A watchdog timer (IWDG or WWDG) is not implemented.
-If the firmware hangs — for example, due to an I2C bus lock-up — the system will not
+If the firmware hangs - for example, due to an I2C bus lock-up - the system will not
 automatically recover. A hard reset (RESET button) is required.
 
 Watchdog implementation is planned for a future phase.
@@ -153,5 +153,5 @@ The following are explicitly out of scope for this project and are not treated a
 ---
 
 *Last updated: March 2026*
-*Project: STM32 Vitals Monitor — Bare-Metal Firmware*
-*Author: Vaibhav Aher — M.Sc. ICT, FAU Erlangen-Nürnberg*
+*Project: STM32 Vitals Monitor - Bare-Metal Firmware*
+*Author: Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg*

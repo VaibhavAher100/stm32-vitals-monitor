@@ -369,7 +369,7 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 |---|---|
 | **Method** | Hardware test |
 | **Requirements** | REQ-RTOS-01, REQ-RTOS-02, REQ-RTOS-03, REQ-RTOS-04, REQ-RTOS-05 |
-| **Evidence** | Hardware output observed on CoolTerm |
+| **Evidence** | `results/freertos_bpm_output_verified.png` |
 
 **Procedure:**
 1. Flash Phase 4 firmware to Nucleo-L476RG.

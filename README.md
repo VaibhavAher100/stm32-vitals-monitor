@@ -4,7 +4,8 @@ Bare-metal firmware on STM32L476RG. No HAL. No CubeMX.
 
 Registers written directly. Addresses from RM0351.
 TMP117 temperature and MAX30102 IR on the same I2C bus.
-Moving average filter on raw IR. 3-layer architecture.
+Moving average filter on raw IR. BPM detection from PPG signal.
+IWDG watchdog. FreeRTOS V10.5.1 single-task scheduler. 3-layer architecture.
 
 ---
 
@@ -35,17 +36,19 @@ Both sensors connect to the same four pins via breadboard rails.
 
 ```
 Src/
-├── main.c          application - loop, UART output, no register access
+├── main.c          application - FreeRTOS task_vitals, UART output, no register access
 ├── filter.c/h      processing  - moving average, circular buffer
+├── bpm.c/h         processing  - BPM detection, threshold crossings on filtered PPG
 ├── uart.c/h        driver      - USART2
 ├── i2c.c/h         driver      - I2C1
+├── iwdg.c/h        driver      - IWDG watchdog, LSI oscillator
 ├── tmp117.c/h      driver      - TMP117 read
 └── max30102.c/h    driver      - MAX30102 init + FIFO read
 ```
 
 Rules: application never touches registers. driver never calls application. nothing uses malloc.
 
-The Git history shows the prototype phase (monolithic main.c) followed by the refactor commit. Both are intentional.
+The Git history shows the full evolution: prototype (monolithic main.c), 3-layer refactor, BPM signal processing, FreeRTOS integration.
 
 ---
 
@@ -58,18 +61,17 @@ STM32 Vitals Monitor
 TMP117  OK
 MAX30102 OK
 ========================
-Temp(C) | IR raw  | IR filt
---------+---------+--------
-23.4       | 719    | 719
-23.4       | 712    | 715
-23.5       | 88991  | 11752   <- finger contact
-23.5       | 92885  | 55903
-23.5       | 92344  | 89113
-23.5       | 730    | 78074   <- finger removed, filter decays
-23.5       | 715    | 719
+Temp(C) | IR raw  | IR filt | BPM
+--------+---------+---------+----
+24.8       | 860    | 860   | ---
+24.8       | 857    | 858   | ---    <- BPM shows --- until 2 crossings
+24.8       | 95865  | 27233 | ---    <- finger contact
+24.8       | 96977  | 51250 | 111
+24.8       | 97259  | 75353 | 111
+24.8       | 97398  | 93215 | 111
 ```
 
-IR values: ~700 ambient, 80000-92000 with finger on sensor.
+IR values: ~857 ambient, ~97000 with finger on sensor. BPM verified at 111.
 
 ---
 
@@ -100,10 +102,9 @@ Full detail: `docs/registers.md`
 
 ## Limitations
 
-- Single loop, no RTOS - sensors polled sequentially
-- No watchdog - I2C lockup needs a hard reset
-- MAX30102 raw IR only - not a validated SpO2 or heart rate reading
-- Delay function is a count-down loop, not a calibrated timer
+- BPM is computed from PPG signal crossings only - not a medically validated reading
+- I2C transactions use timeout busy-loops - a bus lockup still needs a hard reset (IWDG covers this)
+- Single task architecture - no concurrent sensor reads
 
 `docs/limitations.md` has the full list.
 
@@ -111,12 +112,12 @@ Full detail: `docs/registers.md`
 
 ## Build
 
-1. Open `firmware/Core/` in STM32CubeIDE
+1. Open `firmware/` in STM32CubeIDE
 2. Ctrl+B
-3. Drag `firmware/Core/Debug/Core.bin` onto NODE_L476RG
+3. Drag `firmware/Debug/firmware.bin` onto NODE_L476RG
 4. CoolTerm - COM7, 9600, 8N1, Flow Control: None
 5. Press RESET
 
 ---
 
-*Vaibhav Aher - M.Sc. ICT, FAU Erlangen - March 2026*
+*Vaibhav Aher - M.Sc. ICT, FAU Erlangen - April 2026*

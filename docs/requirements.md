@@ -109,6 +109,16 @@ breakout (I2C 0x57) · shared I2C1 bus on PB8/PB9.
 | REQ-OUT-02 | Output columns shall be separated by ` \| ` delimiters, consistent with the header row transmitted at startup. |
 | REQ-OUT-03 | Each output row shall be terminated with `\r\n`. |
 
+### 2.9 RTOS Task Architecture
+
+| ID | Requirement |
+|---|---|
+| REQ-RTOS-01 | The firmware shall run FreeRTOS V10.5.1 (vendored kernel source, MIT license). The kernel shall be compiled from source; no pre-built library shall be used. |
+| REQ-RTOS-02 | The application shall be split into two FreeRTOS tasks: `task_sensor` (priority 2) and `task_uart` (priority 1). No bare `for(;;)` loop shall exist in `main()`. |
+| REQ-RTOS-03 | `task_sensor` shall read sensors, apply the moving average filter, run the BPM detector, and send a `VitalsMsg` to a FreeRTOS queue every 500 ms using `vTaskDelay(pdMS_TO_TICKS(500U))`. |
+| REQ-RTOS-04 | `task_uart` shall block on the queue using `xQueueReceive(..., portMAX_DELAY)` and transmit one UART row per message received. |
+| REQ-RTOS-05 | The IWDG shall be kicked inside `task_sensor` after each sensor read. A hung sensor task shall cause a watchdog reset within the IWDG timeout window. |
+
 ---
 
 ## 3. Non-Functional Requirements
@@ -163,7 +173,7 @@ Items explicitly outside the scope of the current firmware. Not unmet requiremen
 |---|---|---|
 | SpO2 (blood oxygen) calculation | Out of scope | Requires calibrated coefficients, validated algorithm, regulatory approval |
 | Clinical heart rate (BPM) | Implemented | REQ-SYS-08 — dynamic threshold peak detector in bpm.c |
-| FreeRTOS or any RTOS | `[FUTURE]` | Planned extension phase |
+| FreeRTOS or any RTOS | Implemented | Phase 4 — see REQ-RTOS-01 through REQ-RTOS-05 |
 | Low-power sleep modes (STOP2) | `[FUTURE]` | Planned extension phase |
 | I2C bus recovery (9-clock unstick) | `[FUTURE]` | Planned extension phase |
 | Non-volatile storage | Out of scope | No SD card or EEPROM on current hardware |

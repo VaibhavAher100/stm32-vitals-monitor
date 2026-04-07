@@ -25,15 +25,20 @@ relative changes in light absorption, not an absolute SpO2 percentage.
 
 **Do not use the output of this firmware for any medical decision.**
 
-### No Clinical Heart Rate Accuracy
+### BPM Not Clinically Validated
 
-The firmware reads raw IR FIFO data from the MAX30102. A validated heart rate requires:
+Phase 3 adds a dynamic-threshold rising-edge BPM detector operating on the filtered IR PPG signal.
+The algorithm reports beats per minute once two valid threshold crossings are recorded,
+with a 333 ms refractory period to suppress noise.
 
-- Peak detection algorithm on the PPG waveform
-- Motion artefact rejection
-- Stabilisation period before reporting
+This is not a clinically validated heart rate measurement. Known gaps:
 
-Raw IR values are a prerequisite for heart rate calculation, not the result.
+- No motion artefact rejection — movement corrupts the PPG waveform
+- No stabilisation window before reporting (first valid pair triggers output)
+- Threshold derived from a rolling 8-sample min/max window, not an absolute calibrated reference
+- Not tested against a reference pulse oximeter
+
+**Do not use the BPM output of this firmware for any medical decision.**
 
 ---
 
@@ -96,8 +101,9 @@ An SD card or external EEPROM would be needed for data logging.
 ### No Timestamp on Readings
 
 Each sensor reading is printed without a timestamp.
-Accurate timestamps require either a Real-Time Clock (RTC) peripheral
-or a calibrated SysTick counter. Neither is implemented in the current phase.
+Phase 2 added a calibrated SysTick 1 ms counter (get_tick()), but the timestamp
+is not yet included in the UART output line format.
+An RTC peripheral would be needed for wall-clock timestamps.
 
 ---
 
@@ -129,6 +135,6 @@ The following are explicitly out of scope for this project and are not treated a
 
 ---
 
-*Last updated: March 2026*
+*Last updated: April 2026*
 *Project: STM32 Vitals Monitor — Bare-Metal Firmware*
 *Author: Vaibhav Aher — M.Sc. ICT, FAU Erlangen-Nürnberg*

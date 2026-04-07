@@ -95,11 +95,17 @@ breakout (I2C 0x57) · shared I2C1 bus on PB8/PB9.
 | REQ-FIL-05 | The returned average shall divide the running sum by the number of valid samples collected so far, not by `FILTER_WINDOW`, until the buffer is full. |
 | REQ-FIL-06 | `filter_init()` shall zero all buffer slots, the write index, the count, and the running sum. |
 
-### 2.7 Measurement Output
+### 2.7 BPM Detection
 
 | ID | Requirement |
 |---|---|
-| REQ-OUT-01 | Each measurement cycle shall output one row containing three fields: temperature (°C), raw IR value, filtered IR value. |
+| REQ-SYS-08 | The firmware shall compute heart rate (BPM) from the filtered IR signal using a dynamic-threshold rising-edge detector. The threshold shall be the midpoint of the rolling min/max of the last 8 filtered IR samples. A crossing shall only be accepted if at least 333 ms have elapsed since the previous crossing (refractory period, enforcing a maximum of 180 BPM). BPM shall be calculated as `60000 / interval_ms` where `interval_ms` is the time between the two most recent valid crossings. The output shall display `---` until at least two valid crossings have been recorded. |
+
+### 2.8 Measurement Output
+
+| ID | Requirement |
+|---|---|
+| REQ-OUT-01 | Each measurement cycle shall output one row containing four fields: temperature (°C), raw IR value, filtered IR value, and BPM. BPM shall be shown as a decimal integer or `---` if not yet valid. |
 | REQ-OUT-02 | Output columns shall be separated by ` \| ` delimiters, consistent with the header row transmitted at startup. |
 | REQ-OUT-03 | Each output row shall be terminated with `\r\n`. |
 
@@ -156,7 +162,7 @@ Items explicitly outside the scope of the current firmware. Not unmet requiremen
 | Item | Status | Note |
 |---|---|---|
 | SpO2 (blood oxygen) calculation | Out of scope | Requires calibrated coefficients, validated algorithm, regulatory approval |
-| Clinical heart rate (BPM) | `[FUTURE]` | Requires peak detection on PPG waveform |
+| Clinical heart rate (BPM) | Implemented | REQ-SYS-08 — dynamic threshold peak detector in bpm.c |
 | FreeRTOS or any RTOS | `[FUTURE]` | Planned extension phase |
 | Low-power sleep modes (STOP2) | `[FUTURE]` | Planned extension phase |
 | I2C bus recovery (9-clock unstick) | `[FUTURE]` | Planned extension phase |

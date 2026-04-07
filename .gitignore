@@ -32,6 +32,7 @@ objects.list
 
 # Local docs (not for repo)
 docs/*.docx
+SESSION_LOG.md
 
 # OS artifacts
 Thumbs.db

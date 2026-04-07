@@ -15,6 +15,7 @@
 #include "tmp117.h"
 #include "max30102.h"
 #include "filter.h"
+#include "bpm.h"
 
 int main(void)
 {
@@ -41,18 +42,24 @@ int main(void)
     }
 
     uart_str("========================\r\n");
-    uart_str("Temp(C) | IR raw  | IR filt\r\n");
-    uart_str("--------+---------+--------\r\n");
+    uart_str("Temp(C) | IR raw  | IR filt | BPM\r\n");
+    uart_str("--------+---------+---------+----\r\n");
 
-    Filter ir_filter;
+    Filter      ir_filter;
+    BpmDetector bpm;
     filter_init(&ir_filter);
+    bpm_init(&bpm);
 
     for(;;)
     {
-        /* Processing layer - read and filter */
-        int32_t  temp     = tmp117_read_celsius_x10();
-        uint32_t ir_raw   = max30102_read_ir();
-        uint32_t ir_filt  = filter_update(&ir_filter, ir_raw);
+        /* Processing layer - read, filter, detect BPM */
+        int32_t  temp    = tmp117_read_celsius_x10();
+        uint32_t ir_raw  = max30102_read_ir();
+        uint32_t ir_filt = filter_update(&ir_filter, ir_raw);
+        uint32_t bpm_val;
+
+        bpm_update(&bpm, ir_filt);
+        bpm_val = bpm_get(&bpm);
 
         /* Application layer - format and print */
         uart_int(temp / 10);
@@ -62,6 +69,12 @@ int main(void)
         uart_int((int32_t)ir_raw);
         uart_str("  | ");
         uart_int((int32_t)ir_filt);
+        uart_str("  | ");
+        if(bpm_val == BPM_INVALID) {
+            uart_str("---");
+        } else {
+            uart_int((int32_t)bpm_val);
+        }
         uart_str("\r\n");
 
         iwdg_kick();

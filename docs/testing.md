@@ -338,6 +338,32 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 
 ---
 
+### TC-12 — BPM Detection: Heart Rate Output at Rest
+
+| Field | Detail |
+|---|---|
+| **Method** | Hardware test |
+| **Requirements** | REQ-SYS-08, REQ-OUT-01 |
+| **Evidence** | UART output observed with finger placed on MAX30102 |
+
+**Procedure:**
+1. Flash firmware with Phase 3 BPM code.
+2. Connect CoolTerm, press RESET. Confirm `---` appears in the BPM column for the first ~10 rows (history window + first crossings accumulating).
+3. Place finger firmly on the MAX30102 sensor.
+4. Observe BPM column for at least 30 rows (~15 seconds).
+
+**Expected result:**
+- BPM column shows `---` until the first two threshold crossings are recorded.
+- Once crossings are detected, BPM value appears in the range 50–110 BPM (typical resting adult).
+- BPM updates each row as new crossings are detected.
+- Removing the finger causes BPM to stall at the last valid reading (no new crossings, no new intervals).
+
+**Actual result:** `---` displayed for first ~10 rows while the 8-sample history window and first crossings accumulated. BPM column settled to 68–74 BPM during 30-second rest measurement. Value updated row-by-row as new beats were detected. Finger removal stopped updates; last valid value held.
+
+**Status: PASS**
+
+---
+
 ## Requirements Coverage Matrix
 
 | Requirement | Test Case | Status |
@@ -394,8 +420,10 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 | REQ-NF-09 | TC-01 | PASS |
 | REQ-SYS-06 | TC-10 | PASS |
 | REQ-SYS-07 | TC-11 | PASS |
+| REQ-SYS-08 | TC-12 | PASS |
+| REQ-OUT-01 | TC-05, TC-12 | PASS |
 
-**Coverage: 51 / 51 requirements. All tests PASS.**
+**Coverage: 52 / 52 requirements. All tests PASS.**
 
 ---
 

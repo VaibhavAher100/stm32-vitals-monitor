@@ -106,7 +106,7 @@ Full detail: `docs/registers.md`
 - I2C transactions use timeout busy-loops - a bus lockup still needs a hard reset (IWDG covers this)
 - Single task architecture - no concurrent sensor reads
 
-`docs/limitations.md` has the full list.
+See `docs/limitations.md` for the full list.
 
 ---
 

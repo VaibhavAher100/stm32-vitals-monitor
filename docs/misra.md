@@ -1,10 +1,12 @@
-# MISRA-C:2012 Analysis - STM32 Vitals Monitor
+# MISRA C Analysis - STM32 Vitals Monitor
 
 ## Tool
 
 Cppcheck 2.20.0 with misra.py addon.
 Run date: April 2026.
-Standard: MISRA C:2012.
+Rules checked against: MISRA C:2012.
+Note: MISRA C:2025 is the current published standard (March 2025). Cppcheck's
+MISRA addon targets 2012 - this analysis reflects the rules that tooling supports.
 
 ```
 cppcheck --addon=misra.py --enable=style,warning,performance,portability

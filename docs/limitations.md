@@ -25,46 +25,36 @@ relative changes in light absorption, not an absolute SpO2 percentage.
 
 **Do not use the output of this firmware for any medical decision.**
 
-### No Clinical Heart Rate Accuracy
+### BPM Not Clinically Validated
 
-The firmware reads raw IR FIFO data from the MAX30102. A validated heart rate requires:
+Phase 3 adds a dynamic-threshold rising-edge BPM detector operating on the filtered IR PPG signal.
+The algorithm reports beats per minute once two valid threshold crossings are recorded,
+with a 333 ms refractory period to suppress noise.
 
-- Peak detection algorithm on the PPG waveform
-- Motion artefact rejection
-- Stabilisation period before reporting
+This is not a clinically validated heart rate measurement. Known gaps:
 
-Raw IR values are a prerequisite for heart rate calculation, not the result.
+- No motion artefact rejection - movement corrupts the PPG waveform
+- No stabilisation window before reporting (first valid pair triggers output)
+- Threshold derived from a rolling 8-sample min/max window, not an absolute calibrated reference
+- Not tested against a reference pulse oximeter
+
+**Do not use the BPM output of this firmware for any medical decision.**
 
 ---
 
 ## Hardware Limitations
 
-### No Real-Time Operating System (RTOS)
+### FreeRTOS Task Scheduling - No Preemption Tuning
 
-This project runs on bare-metal firmware with no RTOS scheduler.
-Tasks execute sequentially in a single main loop.
+Phase 4 splits the main loop into two FreeRTOS tasks communicating via a depth-1 queue:
+- `task_sensor` (priority 2): reads sensors, filters, detects BPM, kicks IWDG every 500 ms
+- `task_uart` (priority 1): blocks on queue, formats and transmits UART output
 
-Implications:
-- Sensor reads block the loop - if a sensor hangs, the entire system halts
-- No guaranteed timing between sensor reads
-- No concurrent task execution
-
-A FreeRTOS extension is planned as a future phase of this project to address these constraints.
-
-### Delay Function is Not Calibrated
-
-The `delay()` function uses a simple count-down loop:
-```c
-void delay(volatile uint32_t count) { while (count--); }
-```
-
-This is not a calibrated timer. The actual delay duration depends on:
-- Compiler optimisation level
-- Instruction execution time at the current clock frequency
-- Other instructions executing in the same loop
-
-For precise timing, the STM32 SysTick or TIM peripheral should be used.
-This is marked as a future improvement.
+Known gaps at this priority/configuration:
+- Stack sizes are conservatively fixed; no runtime high-water mark monitoring
+- No deadlock detection or task watchdog per task (only system-level IWDG)
+- IWDG is kicked inside task_sensor only - a task_uart hang would not be caught
+- FreeRTOS heap_4 allocator; heap exhaustion causes configASSERT halt, not graceful recovery
 
 ### No Power Management
 
@@ -74,14 +64,6 @@ This project runs in full active mode at all times (4 MHz MSI clock).
 Power consumption in active mode is approximately 1 mA at 4 MHz.
 A production medical device would implement sleep modes between sensor reads
 to reduce average consumption to microamps.
-
-### No Watchdog Timer
-
-A watchdog timer (IWDG or WWDG) is not implemented.
-If the firmware hangs - for example, due to an I2C bus lock-up - the system will not
-automatically recover. A hard reset (RESET button) is required.
-
-Watchdog implementation is planned for a future phase.
 
 ### Single I2C Bus, No Error Recovery
 
@@ -119,8 +101,9 @@ An SD card or external EEPROM would be needed for data logging.
 ### No Timestamp on Readings
 
 Each sensor reading is printed without a timestamp.
-Accurate timestamps require either a Real-Time Clock (RTC) peripheral
-or a calibrated SysTick counter. Neither is implemented in the current phase.
+Phase 2 added a calibrated SysTick 1 ms counter (get_tick()), but the timestamp
+is not yet included in the UART output line format.
+An RTC peripheral would be needed for wall-clock timestamps.
 
 ---
 
@@ -152,6 +135,6 @@ The following are explicitly out of scope for this project and are not treated a
 
 ---
 
-*Last updated: March 2026*
+*Last updated: April 2026*
 *Project: STM32 Vitals Monitor - Bare-Metal Firmware*
 *Author: Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg*

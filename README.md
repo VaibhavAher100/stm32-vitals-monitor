@@ -1,16 +1,29 @@
 # STM32 Vitals Monitor
 
-Bare-metal firmware on STM32L476RG. No HAL. No CubeMX. Registers accessed via CMSIS device headers (STMicroelectronics/cmsis-device-l4).
+**What it does:** TMP117 temperature + MAX30102 PPG/heart rate on STM32L476RG (Cortex-M4, Nucleo board). Readings printed over UART every 500 ms.
 
-TMP117 temperature + MAX30102 PPG/BPM on a shared I2C bus. Moving average filter on raw IR signal. BPM detection from threshold crossings. IWDG watchdog with LSI oscillator. FreeRTOS V10.5.1 two-task scheduler. 3-layer architecture (application / processing / driver). MISRA-C analysed with Cppcheck.
+**What is handwritten:** All peripheral drivers - USART2, I2C1, TMP117, MAX30102, IWDG - written in register-level C using CMSIS device headers (`stm32l476xx.h`). No HAL. No CubeMX-generated peripheral init. `syscalls.c` / `sysmem.c` are IDE-generated newlib stubs, retained unchanged.
 
-Hardware-verified: TMP117 25.3 C, MAX30102 IR 86000+ with finger contact, BPM 119, continuous run with zero watchdog resets.
+**Verified on hardware:** TMP117 25.3 °C. MAX30102 ambient IR ~775, finger contact ~87000. BPM 119 stable over 50+ rows. Zero IWDG resets during run.
+
+**Current architecture:** FreeRTOS V10.5.1. `task_sensor` (priority 2) reads sensors, filters IR, detects BPM, kicks IWDG, pushes to queue. `task_uart` (priority 1) blocks on queue receive and formats UART output. 3-layer rule: application never touches registers, driver never calls application, no heap allocation in project code.
+
+| What | Evidence |
+|---|---|
+| Build compiles clean | `0 errors, 0 warnings` - arm-none-eabi-gcc 14.3.1, `-DSTM32L476xx` |
+| TMP117 reads correctly | 25.3 °C ambient, rises on contact |
+| MAX30102 FIFO streams | ~775 ambient → ~87000 with finger |
+| Filter works | 8-row ramp-up and decay visible in terminal |
+| BPM detected | 119 BPM, stable 50+ rows |
+| IWDG running | No reset during continuous run; 4 s timeout, kicked every 500 ms |
+| No raw hex addresses | `grep -r "0x4[0-9A-F]\{7\}" firmware/Core/Src/` returns zero matches |
+| No heap allocation | `grep -r "malloc\|calloc\|free" firmware/Core/Src/` returns zero matches |
 
 ---
 
 ## How it was built
 
-This project was built in four phases. Each phase is a separate branch and PR in the Git history - the progression is the point.
+Four phases. The commit history preserves the full evolution.
 
 **Phase 1 - Foundation**
 UART driver (USART2, 9600 baud), GPIO output, SysTick 1 ms counter. First characters on a terminal from a clean register state. No libraries, no scaffolding.
@@ -41,7 +54,7 @@ firmware/Core/Src/
 └── max30102.c/h    driver       - MAX30102 FIFO init + read
 ```
 
-Rules: application never touches registers. Driver never calls application. Nothing uses malloc.
+Rules: application never touches registers. Driver never calls application. No heap allocation in project code (FreeRTOS heap_4 is present but only used by the RTOS kernel itself).
 
 ---
 
@@ -76,19 +89,20 @@ Temp(C) | IR raw  | IR filt | BPM
 TMP117   OK
 MAX30102 OK
 ========================
-  25.3  |    1471 |   80631 | ---    <- finger placed, filter climbing from ambient
-  25.3  |   37118 |   62650 | ---
-  25.3  |   77438 |   57102 | ---
-  25.3  |   81135 |   57577 | ---
-  25.3  |   82421 |   75201 | ---
-  25.3  |   86560 |   86367 | 119   <- BPM locks after 2 threshold crossings
-  25.3  |   86536 |   86576 | 119
-  25.3  |   86573 |   86592 | 119
-  25.2  |   86461 |   86518 | 119
-  25.3  |   86375 |   86384 | 119
+  25.3  |     778 |     778 | ---    <- ambient, no finger
+  25.3  |     780 |     779 | ---
+  25.3  |   62657 |    8615 | 119   <- finger contact; filter climbing, BPM already locked
+  25.3  |   70174 |   17288 | 119
+  25.3  |   80963 |   35808 | 119
+  25.3  |   87266 |   46619 | 119
+  25.3  |   87750 |   79062 | 119
+  25.3  |   87543 |   87611 | 119   <- filter window full
+  25.3  |   87352 |   87419 | 119
+  25.3  |    1077 |   11502 | 119   <- finger removed; filter decaying, BPM holds last value
+  25.3  |    1071 |    1074 | 119
 ```
 
-IR raw: ~1000 ambient, ~86000 with finger on sensor. BPM 119 verified on hardware. Filter ramp-up visible across rows 1-5 after finger contact.
+IR raw: ~775 ambient, ~87000 with finger on sensor. BPM 119 verified on hardware. Filter ramp-up (8-sample window) visible across rows 3–8; decay visible after removal.
 
 ---
 
@@ -127,10 +141,10 @@ See `docs/limitations.md` for the full list.
 
 ## Build
 
-1. Open `firmware/` in STM32CubeIDE as the workspace — the `Core` project loads automatically
+1. Open `firmware/` in STM32CubeIDE as the workspace - the `Core` project loads automatically
 2. Ctrl+B (CMSIS include paths are pre-configured in `.cproject`)
 3. Drag `firmware/Core/Debug/Core.bin` onto `NODE_L476RG`
-4. CoolTerm — COM7, 9600 baud, 8N1, Flow Control: None
+4. CoolTerm - COM7, 9600 baud, 8N1, Flow Control: None
 5. Press RESET
 
 ---

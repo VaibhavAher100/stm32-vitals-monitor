@@ -603,7 +603,7 @@ p { color: var(--text); margin-bottom: 16px; }
   <div class="status-bar">
     <span class="status-dot">UART · verified</span>
     <span class="status-dot">TMP117 · 25.3 C</span>
-    <span class="status-dot">MAX30102 · IR 86000+ finger</span>
+    <span class="status-dot">MAX30102 · IR 87000+ finger</span>
     <span class="status-dot">IWDG · 4s watchdog</span>
     <span class="status-dot">BPM · 119 verified</span>
     <span class="status-dot">FreeRTOS V10.5.1 · 2 tasks</span>
@@ -614,7 +614,7 @@ p { color: var(--text); margin-bottom: 16px; }
   <p class="hero-sub">
     Bare-metal firmware on STM32L476RG (Cortex-M4). <strong>No HAL. No CubeMX-generated peripheral init.</strong><br>
     All peripheral drivers are handwritten register-level C using CMSIS device headers
-    (<code>stm32l476xx.h</code>) — <code>USART2-&gt;BRR</code>, not <code>0x4000440C</code>.
+    (<code>stm32l476xx.h</code>) - <code>USART2-&gt;BRR</code>, not <code>0x4000440C</code>.
     <code>syscalls.c</code> / <code>sysmem.c</code> are IDE-generated newlib stubs, retained unchanged.
     Commit history shows the prototype-to-RTOS evolution across four phases.
   </p>
@@ -669,40 +669,36 @@ p { color: var(--text); margin-bottom: 16px; }
 <div class="wrap">
 <div class="section">
   <div class="section-marker"><h2>Verified output</h2></div>
-  <p>Both sensors on the same I2C bus. TMP117 at 0x49, MAX30102 at 0x57. Output below shows the progression across phases - filter behaviour from Phase 1-3, then BPM and FreeRTOS added in Phase 4.</p>
+  <p>TMP117 at 0x49, MAX30102 at 0x57, both on I2C1 (PB8/PB9). The filter column makes the 8-sample window visible - raw responds immediately to contact, filtered takes 8 rows to catch up. BPM locks after two threshold crossings; last value holds when finger is removed.</p>
 
   <div class="terminal">
     <div class="term-header">
-      <span>CoolTerm - COM7 · 9600 8-N-1 · Phase 1-3</span>
-      <span>3-layer refactor · filter decay visible</span>
+      <span>CoolTerm - COM7 · 9600 8-N-1 · ambient + filter ramp</span>
+      <span>8-sample moving average · circular buffer · O(1)</span>
     </div>
     <div class="term-body">
-      <div class="t-line"><span class="t-ok">STM32 Vitals Monitor</span></div>
-      <div class="t-line"><span class="t-ok">TMP117  OK</span></div>
-      <div class="t-line"><span class="t-ok">MAX30102 OK</span></div>
-      <div class="t-line" style="margin-top:8px"><span class="t-o">Temp(C) | IR raw  | IR filt</span></div>
-      <div class="t-line"><span class="t-o">--------+---------+--------</span></div>
-      <div class="t-line"><span class="t-o">23.4       | </span><span class="t-v">719</span><span class="t-o">    | </span><span class="t-v">719</span></div>
-      <div class="t-line"><span class="t-o">23.4       | </span><span class="t-v">712</span><span class="t-o">    | </span><span class="t-v">715</span></div>
-      <div class="t-line"><span class="t-cm">// finger on sensor - raw jumps immediately, filter ramps over 8 rows</span></div>
-      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">88991</span><span class="t-o">  | </span><span class="t-v">11752</span></div>
-      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">90863</span><span class="t-o">  | </span><span class="t-v">34064</span></div>
-      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">92885</span><span class="t-o">  | </span><span class="t-v">55903</span></div>
-      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">92344</span><span class="t-o">  | </span><span class="t-v">89113</span></div>
-      <div class="t-line"><span class="t-cm">// finger removed - filter decays smoothly over 8 rows</span></div>
-      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">730</span><span class="t-o">    | </span><span class="t-v">78074</span></div>
-      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">714</span><span class="t-o">    | </span><span class="t-v">23649</span></div>
-      <div class="t-line"><span class="t-o">23.5       | </span><span class="t-v">715</span><span class="t-o">    | </span><span class="t-v">719</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">778</span><span class="t-o">    | </span><span class="t-v">778</span><span class="t-o">   | </span><span class="t-v">---</span><span class="t-cm">  // ambient - no finger, sensor sees room light</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">780</span><span class="t-o">    | </span><span class="t-v">779</span><span class="t-o">   | </span><span class="t-v">---</span></div>
+      <div class="t-line"><span class="t-cm">// finger placed - raw jumps 778→62657 in one tick; filter must average 8 samples</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">62657</span><span class="t-o">  | </span><span class="t-v">8615</span><span class="t-o">  | </span><span class="t-v">119</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">70174</span><span class="t-o">  | </span><span class="t-v">17288</span><span class="t-o"> | </span><span class="t-v">119</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">80963</span><span class="t-o">  | </span><span class="t-v">35808</span><span class="t-o"> | </span><span class="t-v">119</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">87266</span><span class="t-o">  | </span><span class="t-v">46619</span><span class="t-o"> | </span><span class="t-v">119</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">87750</span><span class="t-o">  | </span><span class="t-v">79062</span><span class="t-o"> | </span><span class="t-v">119</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">87543</span><span class="t-o">  | </span><span class="t-v">87611</span><span class="t-o"> | </span><span class="t-v">119</span><span class="t-cm">  // filter window full - filt ≈ raw</span></div>
+      <div class="t-line"><span class="t-cm">// finger removed - raw drops to ambient; filt decays over 8 rows</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">1077</span><span class="t-o">   | </span><span class="t-v">11502</span><span class="t-o"> | </span><span class="t-v">119</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">1071</span><span class="t-o">   | </span><span class="t-v">1074</span><span class="t-o">  | </span><span class="t-v">119</span><span class="t-cm">  // fully decayed; BPM holds last interval</span></div>
     </div>
   </div>
 
   <div class="phase-connector">
     <div class="phase-connector-line"></div>
     <div class="phase-connector-delta">
-      <span class="phase-delta-tag">+ BPM column</span>
-      <span class="phase-delta-tag">+ FreeRTOS V10.5.1</span>
-      <span class="phase-delta-tag">+ IWDG kick every 500ms</span>
-      <span class="phase-delta-tag">+ vTaskDelay replaces delay_ms</span>
+      <span class="phase-delta-tag">task_sensor priority 2</span>
+      <span class="phase-delta-tag">task_uart priority 1</span>
+      <span class="phase-delta-tag">depth-1 queue xQueueOverwrite</span>
+      <span class="phase-delta-tag">IWDG kick inside task_sensor</span>
     </div>
     <div class="phase-connector-line"></div>
   </div>
@@ -731,16 +727,16 @@ p { color: var(--text); margin-bottom: 16px; }
 
   <div class="warn-box">
     <div class="warn-label">Bug #1 - resolved via CMSIS migration</div>
-    <p>Original code manually typed <code>0x40004408</code> for USART2_BRR. Correct address is <code>0x4000440C</code> (offset 0x0C, not 0x08 — that is CR3). Baud divisor written to CR3 = no output, no error. Four hours of debugging, one wrong hex digit. Fix: moved to CMSIS struct access (<code>USART2-&gt;BRR</code>) — the compiler resolves the offset, no addresses to mistype.</p>
+    <p>Original code manually typed <code>0x40004408</code> for USART2_BRR. Correct address is <code>0x4000440C</code> (offset 0x0C, not 0x08 - that is CR3). Baud divisor written to CR3 = no output, no error. Four hours of debugging, one wrong hex digit. Fix: moved to CMSIS struct access (<code>USART2-&gt;BRR</code>) - the compiler resolves the offset, no addresses to mistype.</p>
   </div>
 
   <div class="warn-box">
     <div class="warn-label">Bug #2 - IWDG hung before main() printed anything</div>
     <p>The IWDG SR update flags (<code>PVU</code>, <code>RVU</code>) only clear once the watchdog is running.
-    Writing <code>0x5555</code> (unlock) before <code>0xCCCC</code> (start) means they never clear —
+    Writing <code>0x5555</code> (unlock) before <code>0xCCCC</code> (start) means they never clear -
     <code>while(IWDG-&gt;SR != 0)</code> loops forever. Also: LSI oscillator must be explicitly enabled via
     <code>RCC-&gt;CSR |= RCC_CSR_LSION</code> and <code>LSIRDY</code> confirmed before any IWDG config.
-    Found with GDB — firmware appeared dead, no UART output at all. RM0351 section 34.3.</p>
+    Found with GDB - firmware appeared dead, no UART output at all. RM0351 section 34.3.</p>
   </div>
 </div>
 </div>
@@ -749,7 +745,7 @@ p { color: var(--text); margin-bottom: 16px; }
 <div class="wrap">
 <div class="section">
   <div class="section-marker"><h2>Register map</h2></div>
-  <p>Register access via CMSIS device headers (<code>stm32l476xx.h</code>, STMicroelectronics/cmsis-device-l4). The compiler resolves struct offsets from RM0351 — no hand-typed addresses to mistype.</p>
+  <p>Register access via CMSIS device headers (<code>stm32l476xx.h</code>, STMicroelectronics/cmsis-device-l4). The compiler resolves struct offsets from RM0351 - no hand-typed addresses to mistype.</p>
 
   <table class="reg-table">
     <thead>
@@ -766,11 +762,11 @@ p { color: var(--text); margin-bottom: 16px; }
       <tr><td class="reg-name">GPIOA_MODER</td><td class="reg-addr">GPIOA-&gt;MODER</td><td>bits 5:4 = PA2 AF mode</td><td class="reg-note">10 = AF, AF7 = USART2_TX via AFR[0]</td></tr>
       <tr><td class="reg-name">GPIOB_OTYPER</td><td class="reg-addr">GPIOB-&gt;OTYPER</td><td>bits 8,9 = PB8, PB9 open-drain</td><td class="reg-note">I2C requires open-drain outputs</td></tr>
       <tr><td class="reg-name">GPIOB_AFR[1]</td><td class="reg-addr">GPIOB-&gt;AFR[1]</td><td>PB8, PB9 → AF4 = I2C1</td><td class="reg-note">AFRH register</td></tr>
-      <tr><td class="reg-name">USART2_BRR</td><td class="reg-addr">USART2-&gt;BRR</td><td>417 = 9600 baud at 4 MHz MSI</td><td class="reg-note">Compiler resolves offset — was 0x0C hex typo bug before CMSIS</td></tr>
+      <tr><td class="reg-name">USART2_BRR</td><td class="reg-addr">USART2-&gt;BRR</td><td>417 = 9600 baud at 4 MHz MSI</td><td class="reg-note">Compiler resolves offset - was 0x0C hex typo bug before CMSIS</td></tr>
       <tr><td class="reg-name">USART2_ISR</td><td class="reg-addr">USART2-&gt;ISR</td><td>USART_ISR_TXE = bit 7</td><td class="reg-note">Poll before each TDR write</td></tr>
       <tr><td class="reg-name">I2C1_TIMINGR</td><td class="reg-addr">I2C1-&gt;TIMINGR</td><td>0x00100D14</td><td class="reg-note">100 kHz standard mode at 4 MHz</td></tr>
-      <tr><td class="reg-name">RCC_CSR</td><td class="reg-addr">RCC-&gt;CSR</td><td>RCC_CSR_LSION, RCC_CSR_LSIRDY</td><td class="reg-note">LSI must be ready before IWDG config — sequence bug if skipped</td></tr>
-      <tr><td class="reg-name">IWDG_KR</td><td class="reg-addr">IWDG-&gt;KR</td><td>0xCCCC start, 0x5555 unlock, 0xAAAA kick</td><td class="reg-note">0xCCCC must precede 0x5555 — order is not optional</td></tr>
+      <tr><td class="reg-name">RCC_CSR</td><td class="reg-addr">RCC-&gt;CSR</td><td>RCC_CSR_LSION, RCC_CSR_LSIRDY</td><td class="reg-note">LSI must be ready before IWDG config - sequence bug if skipped</td></tr>
+      <tr><td class="reg-name">IWDG_KR</td><td class="reg-addr">IWDG-&gt;KR</td><td>0xCCCC start, 0x5555 unlock, 0xAAAA kick</td><td class="reg-note">0xCCCC must precede 0x5555 - order is not optional</td></tr>
       <tr><td class="reg-name">IWDG_PR</td><td class="reg-addr">IWDG-&gt;PR</td><td>0x03 = prescaler /32</td><td class="reg-note">32 kHz LSI / 32 = 1 ms per tick</td></tr>
       <tr><td class="reg-name">IWDG_RLR</td><td class="reg-addr">IWDG-&gt;RLR</td><td>0xFA0 = 4000 ticks</td><td class="reg-note">4 s timeout, kicked every 500 ms by task_sensor</td></tr>
     </tbody>
@@ -782,7 +778,7 @@ p { color: var(--text); margin-bottom: 16px; }
 <div class="wrap">
 <div class="section">
   <div class="section-marker"><h2>Architecture</h2></div>
-  <p>Prototype phase: one file. Refactor phase: three layers. Phase 4: FreeRTOS two-task design — <code>task_sensor</code> reads, filters, detects BPM, kicks IWDG; <code>task_uart</code> blocks on a depth-1 queue and formats output. Rule: application never touches registers. Driver never calls application. No malloc anywhere in authored code.</p>
+  <p>Prototype phase: one file. Refactor phase: three layers. Phase 4: FreeRTOS two-task design - <code>task_sensor</code> reads, filters, detects BPM, kicks IWDG; <code>task_uart</code> blocks on a depth-1 queue and formats output. Rule: application never touches registers. Driver never calls application. No malloc anywhere in authored code.</p>
 
   <div class="arch">
     <div class="arch-layer">
@@ -806,7 +802,7 @@ p { color: var(--text); margin-bottom: 16px; }
 
   <p style="font-size:12px; color:var(--muted); margin-top:16px;">
     <strong style="color:var(--phosphor-dim)">Authored:</strong> uart.c · i2c.c · tmp117.c · max30102.c · iwdg.c · filter.c · bpm.c · main.c · tasks_vitals.c<br>
-    <strong style="color:var(--phosphor-dim)">IDE-generated stubs (unchanged):</strong> syscalls.c · sysmem.c — newlib bare-metal stubs required by arm-none-eabi linker
+    <strong style="color:var(--phosphor-dim)">IDE-generated stubs (unchanged):</strong> syscalls.c · sysmem.c - newlib bare-metal stubs required by arm-none-eabi linker
   </p>
 </div>
 </div>
@@ -900,7 +896,7 @@ p { color: var(--text); margin-bottom: 16px; }
       <span class="ms-tick done">✓ DONE</span>
       <div class="ms-body">
         <div class="ms-title">FreeRTOS V10.5.1 · two-task architecture</div>
-        <p class="ms-desc">ARM_CM4F port. FPU context enabled before vTaskStartScheduler (CPACR write required). task_sensor (priority 2) + task_uart (priority 1) communicate via depth-1 queue — xQueueOverwrite / xQueueReceive. IWDG kicked every 500 ms inside task_sensor. Peripheral drivers migrated to CMSIS device headers (stm32l476xx.h). Verified on hardware: TMP117 25.3 C, IR ~86000 finger contact, BPM 119. No watchdog resets during continuous run.</p>
+        <p class="ms-desc">ARM_CM4F port. FPU context enabled before vTaskStartScheduler (CPACR write required). task_sensor (priority 2) + task_uart (priority 1) communicate via depth-1 queue - xQueueOverwrite / xQueueReceive. IWDG kicked every 500 ms inside task_sensor. Peripheral drivers migrated to CMSIS device headers (stm32l476xx.h). Verified on hardware: TMP117 25.3 C, IR ~87000 finger contact, BPM 119. No watchdog resets during continuous run.</p>
       </div>
     </div>
   </div>

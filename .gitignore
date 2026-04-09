@@ -46,3 +46,6 @@ SESSION_LOG.md
 Thumbs.db
 .DS_Store
 CONTRIBUTING.md
+
+# Workflow artifacts
+docs/superpowers/

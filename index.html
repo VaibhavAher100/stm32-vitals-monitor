@@ -602,27 +602,31 @@ p { color: var(--text); margin-bottom: 16px; }
 <div class="hero">
   <div class="status-bar">
     <span class="status-dot">UART · verified</span>
-    <span class="status-dot">TMP117 · 24.8 C</span>
-    <span class="status-dot">MAX30102 · IR streaming</span>
+    <span class="status-dot">TMP117 · 25.3 C</span>
+    <span class="status-dot">MAX30102 · IR 86000+ finger</span>
     <span class="status-dot">IWDG · 4s watchdog</span>
-    <span class="status-dot">BPM · 111 verified</span>
-    <span class="status-dot">FreeRTOS V10.5.1</span>
+    <span class="status-dot">BPM · 119 verified</span>
+    <span class="status-dot">FreeRTOS V10.5.1 · 2 tasks</span>
   </div>
 
   <h1>STM32<br><span class="accent">Vitals</span><br>Monitor</h1>
 
   <p class="hero-sub">
-    Bare-metal firmware on STM32L476RG (Cortex-M4). <strong>No HAL. No CubeMX.</strong><br>
-    Every register address looked up in RM0351 and written directly.
-    Git history shows the full prototype-to-RTOS evolution across four phases.
+    Bare-metal firmware on STM32L476RG (Cortex-M4). <strong>No HAL. No CubeMX-generated peripheral init.</strong><br>
+    All peripheral drivers are handwritten register-level C using CMSIS device headers
+    (<code>stm32l476xx.h</code>) — <code>USART2-&gt;BRR</code>, not <code>0x4000440C</code>.
+    <code>syscalls.c</code> / <code>sysmem.c</code> are IDE-generated newlib stubs, retained unchanged.
+    Commit history shows the prototype-to-RTOS evolution across four phases.
   </p>
 
   <div class="hero-caps">
+    <span>CMSIS device headers</span>
     <span>I2C sensor drivers</span>
     <span>moving average filter</span>
     <span>BPM from PPG</span>
     <span>IWDG watchdog</span>
     <span>FreeRTOS V10.5.1</span>
+    <span>two-task + queue</span>
     <span>3-layer architecture</span>
     <span>MISRA-C analysed</span>
     <span>hardware verified</span>
@@ -705,38 +709,38 @@ p { color: var(--text); margin-bottom: 16px; }
 
   <div class="terminal">
     <div class="term-header">
-      <span>CoolTerm - COM7 · 9600 8-N-1 · Phase 4</span>
-      <span>FreeRTOS V10.5.1 · BPM verified · April 2026</span>
+      <span>CoolTerm - COM7 · 9600 8-N-1 · Phase 4 (CMSIS build)</span>
+      <span>task_sensor + task_uart · BPM verified · April 2026</span>
     </div>
     <div class="term-body">
       <div class="t-line"><span class="t-ok">STM32 Vitals Monitor</span></div>
-      <div class="t-line"><span class="t-ok">TMP117  OK</span></div>
-      <div class="t-line"><span class="t-ok">MAX30102 OK</span></div>
       <div class="t-line" style="margin-top:8px"><span class="t-o">Temp(C) | IR raw  | IR filt | BPM</span></div>
       <div class="t-line"><span class="t-o">--------+---------+---------+----</span></div>
-      <div class="t-line"><span class="t-o">24.8       | </span><span class="t-v">860</span><span class="t-o">    | </span><span class="t-v">860</span><span class="t-o">   | </span><span class="t-v">---</span></div>
-      <div class="t-line"><span class="t-o">24.8       | </span><span class="t-v">857</span><span class="t-o">    | </span><span class="t-v">858</span><span class="t-o">   | </span><span class="t-v">---</span><span class="t-cm">  // BPM shows --- until 2 crossings confirmed</span></div>
-      <div class="t-line"><span class="t-o">24.8       | </span><span class="t-v">95865</span><span class="t-o">  | </span><span class="t-v">27233</span><span class="t-o"> | </span><span class="t-v">---</span><span class="t-cm">  // finger on sensor</span></div>
-      <div class="t-line"><span class="t-o">24.8       | </span><span class="t-v">96977</span><span class="t-o">  | </span><span class="t-v">51250</span><span class="t-o"> | </span><span class="t-v">111</span></div>
-      <div class="t-line"><span class="t-o">24.8       | </span><span class="t-v">97259</span><span class="t-o">  | </span><span class="t-v">75353</span><span class="t-o"> | </span><span class="t-v">111</span></div>
-      <div class="t-line"><span class="t-o">24.8       | </span><span class="t-v">97398</span><span class="t-o">  | </span><span class="t-v">93215</span><span class="t-o"> | </span><span class="t-v">111</span></div>
+      <div class="t-line"><span class="t-ok">TMP117   OK</span></div>
+      <div class="t-line"><span class="t-ok">MAX30102 OK</span></div>
+      <div class="t-line" style="margin-top:8px"><span class="t-o">25.3       | </span><span class="t-v">1471</span><span class="t-o">   | </span><span class="t-v">80631</span><span class="t-o"> | </span><span class="t-v">---</span><span class="t-cm">  // finger placed, filter climbing</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">37118</span><span class="t-o">  | </span><span class="t-v">62650</span><span class="t-o"> | </span><span class="t-v">---</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">81135</span><span class="t-o">  | </span><span class="t-v">57577</span><span class="t-o"> | </span><span class="t-v">---</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">82421</span><span class="t-o">  | </span><span class="t-v">75201</span><span class="t-o"> | </span><span class="t-v">---</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">86560</span><span class="t-o">  | </span><span class="t-v">86367</span><span class="t-o"> | </span><span class="t-v">119</span><span class="t-cm">  // BPM locks after 2 threshold crossings</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">86536</span><span class="t-o">  | </span><span class="t-v">86576</span><span class="t-o"> | </span><span class="t-v">119</span></div>
+      <div class="t-line"><span class="t-o">25.2       | </span><span class="t-v">86461</span><span class="t-o">  | </span><span class="t-v">86518</span><span class="t-o"> | </span><span class="t-v">119</span></div>
+      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">86375</span><span class="t-o">  | </span><span class="t-v">86384</span><span class="t-o"> | </span><span class="t-v">119</span></div>
     </div>
   </div>
 
   <div class="warn-box">
-    <div class="warn-label">Bug #1 - wrong register address</div>
-    <p>USART2_BRR sits at offset <code>0x0C</code> from the USART2 base - absolute address <code>0x4000440C</code>.
-    Offset <code>0x08</code> is CR3. Writing a baud rate divisor to CR3 produces no output and no error.
-    Four hours of debugging, one wrong hex digit. RM0351 page 1388.</p>
+    <div class="warn-label">Bug #1 - resolved via CMSIS migration</div>
+    <p>Original code manually typed <code>0x40004408</code> for USART2_BRR. Correct address is <code>0x4000440C</code> (offset 0x0C, not 0x08 — that is CR3). Baud divisor written to CR3 = no output, no error. Four hours of debugging, one wrong hex digit. Fix: moved to CMSIS struct access (<code>USART2-&gt;BRR</code>) — the compiler resolves the offset, no addresses to mistype.</p>
   </div>
 
   <div class="warn-box">
     <div class="warn-label">Bug #2 - IWDG hung before main() printed anything</div>
     <p>The IWDG SR update flags (<code>PVU</code>, <code>RVU</code>) only clear once the watchdog is running.
-    Writing <code>0x5555</code> (unlock) before <code>0xCCCC</code> (start) means they never clear -
-    <code>while(IWDG_SR != 0)</code> loops forever. Also: LSI oscillator must be explicitly enabled via
-    <code>RCC_CSR</code> and <code>LSIRDY</code> confirmed before any IWDG config.
-    Found with GDB - firmware appeared dead, no UART output at all. RM0351 section 34.3.</p>
+    Writing <code>0x5555</code> (unlock) before <code>0xCCCC</code> (start) means they never clear —
+    <code>while(IWDG-&gt;SR != 0)</code> loops forever. Also: LSI oscillator must be explicitly enabled via
+    <code>RCC-&gt;CSR |= RCC_CSR_LSION</code> and <code>LSIRDY</code> confirmed before any IWDG config.
+    Found with GDB — firmware appeared dead, no UART output at all. RM0351 section 34.3.</p>
   </div>
 </div>
 </div>
@@ -745,36 +749,30 @@ p { color: var(--text); margin-bottom: 16px; }
 <div class="wrap">
 <div class="section">
   <div class="section-marker"><h2>Register map</h2></div>
-  <p>Every address cross-referenced to RM0351. No guessing.</p>
+  <p>Register access via CMSIS device headers (<code>stm32l476xx.h</code>, STMicroelectronics/cmsis-device-l4). The compiler resolves struct offsets from RM0351 — no hand-typed addresses to mistype.</p>
 
   <table class="reg-table">
     <thead>
       <tr>
         <th>Register</th>
-        <th>Address</th>
-        <th>Bits used</th>
+        <th>CMSIS access</th>
+        <th>Bits / value</th>
         <th>Note</th>
       </tr>
     </thead>
     <tbody>
-      <tr><td class="reg-name">RCC_AHB2ENR</td><td class="reg-addr">0x4002104C</td><td>Bit 0 = GPIOA, Bit 1 = GPIOB</td><td class="reg-note">Clock enable before any peripheral access</td></tr>
-      <tr><td class="reg-name">RCC_APB1ENR1</td><td class="reg-addr">0x40021058</td><td>Bit 17 = USART2, Bit 21 = I2C1</td><td class="reg-note"></td></tr>
-      <tr><td class="reg-name">GPIOA_MODER</td><td class="reg-addr">0x48000000</td><td>Bits 5:4 = PA2, Bits 11:10 = PA5</td><td class="reg-note">10 = AF mode, 01 = output</td></tr>
-      <tr><td class="reg-name">GPIOA_AFRL</td><td class="reg-addr">0x48000020</td><td>Bits 11:8 = PA2 → AF7</td><td class="reg-note">AF7 = USART2_TX</td></tr>
-      <tr><td class="reg-name">USART2_CR1</td><td class="reg-addr">0x40004400</td><td>Bit 0 = UE, Bit 3 = TE</td><td class="reg-note">Set TE before UE</td></tr>
-      <tr>
-        <td class="reg-warn">USART2_BRR ⚑</td>
-        <td class="reg-addr" style="color:#ff3333">0x4000440C</td>
-        <td>BRR = 417 for 9600 @ 4MHz</td>
-        <td class="reg-note" style="color:#ff6644">Offset 0x0C, not 0x08 (that is CR3)</td>
-      </tr>
-      <tr><td class="reg-name">USART2_ISR</td><td class="reg-addr">0x4000441C</td><td>Bit 7 = TXE</td><td class="reg-note">Wait for 1 before each TDR write</td></tr>
-      <tr><td class="reg-name">USART2_TDR</td><td class="reg-addr">0x40004428</td><td>Write byte to transmit</td><td class="reg-note"></td></tr>
-      <tr><td class="reg-name">I2C1_TIMINGR</td><td class="reg-addr">0x40005410</td><td>0x00100D14</td><td class="reg-note">100kHz standard mode at 4MHz</td></tr>
-      <tr><td class="reg-name">RCC_CSR</td><td class="reg-addr">0x40021094</td><td>Bit 0 = LSION, Bit 1 = LSIRDY</td><td class="reg-note">LSI must be running before IWDG SR flags can clear</td></tr>
-      <tr><td class="reg-name">IWDG_KR</td><td class="reg-addr">0x40003000</td><td>0xCCCC = start, 0x5555 = unlock, 0xAAAA = kick</td><td class="reg-note">0xCCCC must come before 0x5555 - order matters</td></tr>
-      <tr><td class="reg-name">IWDG_PR</td><td class="reg-addr">0x40003004</td><td>0x03 = prescaler /32</td><td class="reg-note">1 ms per tick at 32 kHz LSI</td></tr>
-      <tr><td class="reg-name">IWDG_RLR</td><td class="reg-addr">0x40003008</td><td>0xFA0 = 4000</td><td class="reg-note">4000 ms timeout - 8x safety margin at 500 ms kick rate</td></tr>
+      <tr><td class="reg-name">RCC_AHB2ENR</td><td class="reg-addr">RCC-&gt;AHB2ENR</td><td>RCC_AHB2ENR_GPIOAEN, GPIOBEN</td><td class="reg-note">Clock enable before any peripheral access</td></tr>
+      <tr><td class="reg-name">RCC_APB1ENR1</td><td class="reg-addr">RCC-&gt;APB1ENR1</td><td>bit 17 = USART2, bit 21 = I2C1</td><td class="reg-note"></td></tr>
+      <tr><td class="reg-name">GPIOA_MODER</td><td class="reg-addr">GPIOA-&gt;MODER</td><td>bits 5:4 = PA2 AF mode</td><td class="reg-note">10 = AF, AF7 = USART2_TX via AFR[0]</td></tr>
+      <tr><td class="reg-name">GPIOB_OTYPER</td><td class="reg-addr">GPIOB-&gt;OTYPER</td><td>bits 8,9 = PB8, PB9 open-drain</td><td class="reg-note">I2C requires open-drain outputs</td></tr>
+      <tr><td class="reg-name">GPIOB_AFR[1]</td><td class="reg-addr">GPIOB-&gt;AFR[1]</td><td>PB8, PB9 → AF4 = I2C1</td><td class="reg-note">AFRH register</td></tr>
+      <tr><td class="reg-name">USART2_BRR</td><td class="reg-addr">USART2-&gt;BRR</td><td>417 = 9600 baud at 4 MHz MSI</td><td class="reg-note">Compiler resolves offset — was 0x0C hex typo bug before CMSIS</td></tr>
+      <tr><td class="reg-name">USART2_ISR</td><td class="reg-addr">USART2-&gt;ISR</td><td>USART_ISR_TXE = bit 7</td><td class="reg-note">Poll before each TDR write</td></tr>
+      <tr><td class="reg-name">I2C1_TIMINGR</td><td class="reg-addr">I2C1-&gt;TIMINGR</td><td>0x00100D14</td><td class="reg-note">100 kHz standard mode at 4 MHz</td></tr>
+      <tr><td class="reg-name">RCC_CSR</td><td class="reg-addr">RCC-&gt;CSR</td><td>RCC_CSR_LSION, RCC_CSR_LSIRDY</td><td class="reg-note">LSI must be ready before IWDG config — sequence bug if skipped</td></tr>
+      <tr><td class="reg-name">IWDG_KR</td><td class="reg-addr">IWDG-&gt;KR</td><td>0xCCCC start, 0x5555 unlock, 0xAAAA kick</td><td class="reg-note">0xCCCC must precede 0x5555 — order is not optional</td></tr>
+      <tr><td class="reg-name">IWDG_PR</td><td class="reg-addr">IWDG-&gt;PR</td><td>0x03 = prescaler /32</td><td class="reg-note">32 kHz LSI / 32 = 1 ms per tick</td></tr>
+      <tr><td class="reg-name">IWDG_RLR</td><td class="reg-addr">IWDG-&gt;RLR</td><td>0xFA0 = 4000 ticks</td><td class="reg-note">4 s timeout, kicked every 500 ms by task_sensor</td></tr>
     </tbody>
   </table>
 </div>
@@ -784,27 +782,32 @@ p { color: var(--text); margin-bottom: 16px; }
 <div class="wrap">
 <div class="section">
   <div class="section-marker"><h2>Architecture</h2></div>
-  <p>Prototype phase: one file. Refactor phase: three layers. Phase 4: FreeRTOS wraps the loop in a single task. The Git history shows the full evolution - prototype, refactor, signal processing, RTOS. An interviewer can read every decision.</p>
+  <p>Prototype phase: one file. Refactor phase: three layers. Phase 4: FreeRTOS two-task design — <code>task_sensor</code> reads, filters, detects BPM, kicks IWDG; <code>task_uart</code> blocks on a depth-1 queue and formats output. Rule: application never touches registers. Driver never calls application. No malloc anywhere in authored code.</p>
 
   <div class="arch">
     <div class="arch-layer">
       <div class="arch-label app">Application</div>
-      <div class="arch-desc">FreeRTOS task_vitals wraps the sensor loop. vTaskDelay owns timing. IWDG kicked every 500 ms. No register access.</div>
-      <div class="arch-files">main.c</div>
+      <div class="arch-desc">task_sensor (priority 2): sensors → filter → BPM → xQueueOverwrite → IWDG kick → vTaskDelay 500 ms. task_uart (priority 1): xQueueReceive blocks → UART format.</div>
+      <div class="arch-files">main.c · tasks_vitals.c</div>
     </div>
     <div class="arch-arrow">↓ calls only layer below</div>
     <div class="arch-layer">
       <div class="arch-label proc">Processing</div>
-      <div class="arch-desc">Moving average filter - circular buffer, O(1) per sample, no malloc. BPM detection from threshold crossings on filtered PPG.</div>
+      <div class="arch-desc">Moving average: 8-sample circular buffer, O(1) per sample. BPM: dynamic threshold (midpoint of rolling min/max), rising-edge crossing, 333 ms refractory.</div>
       <div class="arch-files">filter.c · bpm.c</div>
     </div>
     <div class="arch-arrow">↓ calls only layer below</div>
     <div class="arch-layer">
       <div class="arch-label drv">Driver</div>
-      <div class="arch-desc">Register writes only. UART, I2C, TMP117, MAX30102, IWDG. Nothing leaks upward.</div>
+      <div class="arch-desc">CMSIS register access only. UART, I2C, TMP117, MAX30102, IWDG. No calls upward. No malloc.</div>
       <div class="arch-files">uart · i2c · tmp117 · max30102 · iwdg</div>
     </div>
   </div>
+
+  <p style="font-size:12px; color:var(--muted); margin-top:16px;">
+    <strong style="color:var(--phosphor-dim)">Authored:</strong> uart.c · i2c.c · tmp117.c · max30102.c · iwdg.c · filter.c · bpm.c · main.c · tasks_vitals.c<br>
+    <strong style="color:var(--phosphor-dim)">IDE-generated stubs (unchanged):</strong> syscalls.c · sysmem.c — newlib bare-metal stubs required by arm-none-eabi linker
+  </p>
 </div>
 </div>
 
@@ -886,7 +889,7 @@ p { color: var(--text); margin-bottom: 16px; }
       <span class="ms-tick done">✓ DONE</span>
       <div class="ms-body">
         <div class="ms-title">BPM detection from PPG signal</div>
-        <p class="ms-desc">Dynamic threshold peak detector on filtered IR signal. Threshold = 60% of rolling max. Beat interval from timestamp delta. BPM = 60000 / interval. Shows --- until two crossings confirmed, then live BPM. Verified 68-74 BPM at rest.</p>
+        <p class="ms-desc">Dynamic threshold: midpoint of rolling min/max over 16-sample history window. Rising-edge crossing detection with 333 ms refractory period. BPM = 60000 / interval_ms. Shows --- until two crossings confirmed, then live reading. Verified 119 BPM on hardware.</p>
       </div>
     </div>
     <div class="ms ms-phase">
@@ -896,8 +899,8 @@ p { color: var(--text); margin-bottom: 16px; }
     <div class="ms">
       <span class="ms-tick done">✓ DONE</span>
       <div class="ms-body">
-        <div class="ms-title">FreeRTOS V10.5.1 task scheduling</div>
-        <p class="ms-desc">ARM_CM4F port. FPU enabled before vTaskStartScheduler (CPACR write required). Single task wraps the sensor loop. vTaskDelay replaces delay_ms. IWDG kicked inside task before delay. Verified on hardware: TMP117 24.8 C, BPM 111, no resets in 8-minute run.</p>
+        <div class="ms-title">FreeRTOS V10.5.1 · two-task architecture</div>
+        <p class="ms-desc">ARM_CM4F port. FPU context enabled before vTaskStartScheduler (CPACR write required). task_sensor (priority 2) + task_uart (priority 1) communicate via depth-1 queue — xQueueOverwrite / xQueueReceive. IWDG kicked every 500 ms inside task_sensor. Peripheral drivers migrated to CMSIS device headers (stm32l476xx.h). Verified on hardware: TMP117 25.3 C, IR ~86000 finger contact, BPM 119. No watchdog resets during continuous run.</p>
       </div>
     </div>
   </div>

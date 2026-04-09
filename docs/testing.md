@@ -261,30 +261,31 @@ grep -rn "malloc\|calloc\|free\|realloc" firmware/Core/Src/ firmware/Core/Inc/
 
 ---
 
-### TC-09 - Volatile Qualifier on All Register Definitions
+### TC-09 - CMSIS Register Access: No Raw Hex Addresses
 
 | Field | Detail |
 |---|---|
 | **Method** | Static inspection |
-| **Requirements** | REQ-NF-04 |
 | **Evidence** | Source file inspection (commands below) |
 
 **Procedure:**
-Inspect all register macro definitions in driver source files and verify
-each uses `volatile uint32_t *`.
+Confirm all driver files use CMSIS peripheral struct access (`PERIPHERAL->REGISTER`)
+and contain zero raw hexadecimal register address macros.
 
 ```
-grep -n "0x4[0-9A-Fa-f]\{7\}" firmware/Core/Src/uart.c firmware/Core/Src/i2c.c firmware/Core/Src/max30102.c
+grep -n "0x4[0-9A-Fa-f]\{7\}" firmware/Core/Src/uart.c firmware/Core/Src/i2c.c \
+  firmware/Core/Src/iwdg.c firmware/Core/Src/max30102.c
 ```
 
 **Expected result:**
-Every line defining a register address uses the pattern:
-`(*((volatile uint32_t*)0x...))`.
+Zero matches. All register access via CMSIS structs (`USART2->BRR`, `I2C1->CR1`,
+`IWDG->KR`, etc.) from `stm32l476xx.h`.
 
 **Actual result:**
-All register definitions in `uart.c` (11 definitions), `i2c.c`
-(12 definitions), and `max30102.c` (5 inline definitions) use
-`volatile uint32_t *` casts. No bare pointer casts found.
+Zero raw address matches in any driver file. All peripheral access uses CMSIS
+struct notation. `stm32l476xx.h` provides the volatile struct definitions;
+`USART2->BRR` and `*((volatile uint32_t*)0x4000440C)` compile to identical
+instructions.
 
 **Status: PASS**
 
@@ -388,82 +389,66 @@ All register definitions in `uart.c` (11 definitions), `i2c.c`
 - No hang or unexpected reset (IWDG kicked inside task loop before `vTaskDelay`).
 
 **Actual result:** Startup banner appeared immediately after flash. `TMP117 OK` and
-`MAX30102 OK` printed once scheduler started and `task_vitals` entered its init
+`MAX30102 OK` printed once scheduler started and `task_sensor` entered its init
 block. Measurement rows appeared at ~500 ms intervals. BPM column showed `---`
 for the first ~10 rows while the 8-sample history window filled, then settled to
-111 BPM with finger on sensor. Ambient IR ~857, finger IR ~97000. No hangs or
-unexpected resets observed during an 8-minute run. IWDG kicked every 500 ms by
-`task_vitals` as expected.
+119 BPM with finger on sensor. Ambient IR ~1000, finger IR ~86000. No hangs or
+unexpected resets observed during the run. IWDG kicked every 500 ms by
+`task_sensor` as expected.
 
 **Status: PASS**
 
 ---
 
-## Requirements Coverage Matrix
+### TC-14 - CMSIS Build: Zero Errors on Full Recompile
 
-| Requirement | Test Case | Status |
-|---|---|---|
-| REQ-SYS-01 | TC-01 | PASS |
-| REQ-SYS-02 | TC-05 | PASS |
-| REQ-SYS-03 | TC-03, TC-04 | PASS |
-| REQ-SYS-04 | TC-03, TC-04 | PASS |
-| REQ-SYS-05 | TC-05 | PASS |
-| REQ-UART-01 | TC-01 | PASS |
-| REQ-UART-02 | TC-01 | PASS |
-| REQ-UART-03 | TC-01 | PASS |
-| REQ-UART-04 | TC-01 | PASS |
-| REQ-UART-05 | TC-01 | PASS |
-| REQ-I2C-01 | TC-02 | PASS |
-| REQ-I2C-02 | TC-02 | PASS |
-| REQ-I2C-03 | TC-02 | PASS |
-| REQ-I2C-04 | TC-02 | PASS |
-| REQ-I2C-05 | TC-02 | PASS |
-| REQ-I2C-06 | TC-02 | PASS |
-| REQ-I2C-07 | TC-02 | PASS |
-| REQ-TMP-01 | TC-03 | PASS |
-| REQ-TMP-02 | TC-03 | PASS |
-| REQ-TMP-03 | TC-03 | PASS |
-| REQ-TMP-04 | TC-03 | PASS |
-| REQ-TMP-05 | TC-03 | PASS |
-| REQ-MAX-01 | TC-04 | PASS |
-| REQ-MAX-02 | TC-04 | PASS |
-| REQ-MAX-03 | TC-04 | PASS |
-| REQ-MAX-04 | TC-04 | PASS |
-| REQ-MAX-05 | TC-04 | PASS |
-| REQ-MAX-06 | TC-04 | PASS |
-| REQ-MAX-07 | TC-04 | PASS |
-| REQ-MAX-08 | TC-04 | PASS |
-| REQ-MAX-09 | TC-04 | PASS |
-| REQ-MAX-10 | TC-04 | PASS |
-| REQ-FIL-01 | TC-06 | PASS |
-| REQ-FIL-02 | TC-06 | PASS |
-| REQ-FIL-03 | TC-06 | PASS |
-| REQ-FIL-04 | TC-06 | PASS |
-| REQ-FIL-05 | TC-06 | PASS |
-| REQ-FIL-06 | TC-06 | PASS |
-| REQ-OUT-01 | TC-05 | PASS |
-| REQ-OUT-02 | TC-05 | PASS |
-| REQ-OUT-03 | TC-05 | PASS |
-| REQ-NF-01 | TC-08 | PASS |
-| REQ-NF-02 | TC-08 | PASS |
-| REQ-NF-03 | TC-08 | PASS |
-| REQ-NF-04 | TC-09 | PASS |
-| REQ-NF-05 | TC-07 | PASS |
-| REQ-NF-06 | TC-07 | PASS |
-| REQ-NF-07 | TC-07 | PASS |
-| REQ-NF-08 | TC-07 | PASS |
-| REQ-NF-09 | TC-01 | PASS |
-| REQ-SYS-06 | TC-10 | PASS |
-| REQ-SYS-07 | TC-11 | PASS |
-| REQ-SYS-08 | TC-12 | PASS |
-| REQ-OUT-01 | TC-05, TC-12 | PASS |
-| REQ-RTOS-01 | TC-13 | PASS |
-| REQ-RTOS-02 | TC-13 | PASS |
-| REQ-RTOS-03 | TC-13 | PASS |
-| REQ-RTOS-04 | TC-13 | PASS |
-| REQ-RTOS-05 | TC-13 | PASS |
+| Field | Detail |
+|---|---|
+| **Method** | Hardware test + build verification |
+| **Evidence** | STM32CubeIDE build console output |
 
-**Coverage: 57 / 57 requirements. All tests PASS.**
+**Procedure:**
+1. Open workspace `firmware/` in STM32CubeIDE 2.1.0.
+2. Project → Clean, then Ctrl+B (Debug configuration).
+3. Observe build console for errors or warnings.
+4. Flash `firmware/Core/Debug/Core.bin` to Nucleo-L476RG.
+5. Observe UART output: confirm header, sensor OK messages, and BPM readings.
+
+**Expected result:**
+- Build console ends with `Build Finished. 0 errors, 0 warnings`.
+- All 12 project source files compiled with `-DSTM32L476xx` and CMSIS include paths.
+- FreeRTOS source (tasks.c, queue.c, list.c, port.c, heap_4.c) compiled from `Middlewares/`.
+- Hardware output matches verified numbers: TMP117 ~25 C, IR ~86000 finger, BPM ~119.
+
+**Actual result:** Build completed with 0 errors, 0 warnings. All source files compiled
+including FreeRTOS. Firmware flashed and ran correctly on hardware: TMP117 25.3 C,
+MAX30102 IR raw ~86000 with finger contact, BPM 119 stable after window fill.
+No IWDG resets observed.
+
+**Status: PASS**
+
+---
+
+## Test Summary
+
+| TC-ID | Description | Method | Status |
+|---|---|---|---|
+| TC-01 | UART init and transmission | Hardware | PASS |
+| TC-02 | I2C bus + sensor address detection | Hardware | PASS |
+| TC-03 | TMP117 temperature reading | Hardware | PASS |
+| TC-04 | MAX30102 IR FIFO read | Hardware | PASS |
+| TC-05 | Both sensors combined output format | Hardware | PASS |
+| TC-06 | Moving average filter behaviour | Hardware | PASS |
+| TC-07 | 3-layer architecture: no cross-layer register access | Static | PASS |
+| TC-08 | No dynamic allocation, no recursion | Static | PASS |
+| TC-09 | CMSIS register access: zero raw hex addresses | Static | PASS |
+| TC-10 | SysTick 1 ms tick advances correctly | Hardware | PASS |
+| TC-11 | IWDG resets board if task hangs | Hardware | PASS |
+| TC-12 | BPM detection at rest | Hardware | PASS |
+| TC-13 | FreeRTOS scheduler, two-task operation, IWDG kick | Hardware | PASS |
+| TC-14 | CMSIS build: zero errors, hardware verified | Hardware | PASS |
+
+**14 / 14 test cases PASS.**
 
 ---
 

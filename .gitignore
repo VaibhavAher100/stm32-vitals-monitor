@@ -34,8 +34,6 @@ objects.list
 .settings/
 
 # STM32CubeIDE project metadata
-.cproject
-.project
 .metadata/
 
 # Local docs (not for repo)

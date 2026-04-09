@@ -4,7 +4,7 @@ Bare-metal firmware on STM32L476RG. No HAL. No CubeMX. Registers accessed via CM
 
 TMP117 temperature + MAX30102 PPG/BPM on a shared I2C bus. Moving average filter on raw IR signal. BPM detection from threshold crossings. IWDG watchdog with LSI oscillator. FreeRTOS V10.5.1 two-task scheduler. 3-layer architecture (application / processing / driver). MISRA-C analysed with Cppcheck.
 
-Hardware-verified: TMP117 24.8 C, MAX30102 IR 97000+ with finger contact, BPM 111, 8-minute run with zero watchdog resets.
+Hardware-verified: TMP117 25.3 C, MAX30102 IR 86000+ with finger contact, BPM 119, continuous run with zero watchdog resets.
 
 ---
 
@@ -69,23 +69,26 @@ Both sensors share I2C1 on PB8 (SCL) / PB9 (SDA) via breadboard rails.
 ## Output
 
 ```
-========================
 STM32 Vitals Monitor
-========================
-TMP117   OK
-MAX30102 OK
 ========================
 Temp(C) | IR raw  | IR filt | BPM
 --------+---------+---------+----
-  24.8  |     860 |     860 | ---
-  24.8  |     857 |     858 | ---    <- BPM shows --- until 2 crossings detected
-  24.8  |   95865 |   27233 | ---    <- finger contact, filter climbing
-  24.8  |   96977 |   51250 | 111
-  24.8  |   97259 |   75353 | 111
-  24.8  |   97398 |   93215 | 111
+TMP117   OK
+MAX30102 OK
+========================
+  25.3  |    1471 |   80631 | ---    <- finger placed, filter climbing from ambient
+  25.3  |   37118 |   62650 | ---
+  25.3  |   77438 |   57102 | ---
+  25.3  |   81135 |   57577 | ---
+  25.3  |   82421 |   75201 | ---
+  25.3  |   86560 |   86367 | 119   <- BPM locks after 2 threshold crossings
+  25.3  |   86536 |   86576 | 119
+  25.3  |   86573 |   86592 | 119
+  25.2  |   86461 |   86518 | 119
+  25.3  |   86375 |   86384 | 119
 ```
 
-IR raw: ~857 ambient, ~97000 with finger on sensor. BPM 111 verified on hardware. Filter decay visible across rows 1-2 before finger contact.
+IR raw: ~1000 ambient, ~86000 with finger on sensor. BPM 119 verified on hardware. Filter ramp-up visible across rows 1-5 after finger contact.
 
 ---
 
@@ -124,14 +127,11 @@ See `docs/limitations.md` for the full list.
 
 ## Build
 
-1. Open `firmware/` in STM32CubeIDE as the workspace
-2. In Project Properties → C/C++ Build → Settings → MCU GCC Compiler → Include paths, add:
-   - `${workspace_loc:/${ProjName}/Drivers/CMSIS/Device/ST/STM32L4xx/Include}`
-   - `${workspace_loc:/${ProjName}/Drivers/CMSIS/Include}`
-3. Ctrl+B
-4. Drag `firmware/Debug/firmware.bin` onto `NODE_L476RG`
-5. CoolTerm - COM7, 9600 baud, 8N1, Flow Control: None
-6. Press RESET
+1. Open `firmware/` in STM32CubeIDE as the workspace — the `Core` project loads automatically
+2. Ctrl+B (CMSIS include paths are pre-configured in `.cproject`)
+3. Drag `firmware/Core/Debug/Core.bin` onto `NODE_L476RG`
+4. CoolTerm — COM7, 9600 baud, 8N1, Flow Control: None
+5. Press RESET
 
 ---
 

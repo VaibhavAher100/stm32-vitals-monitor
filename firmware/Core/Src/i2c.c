@@ -1,67 +1,61 @@
-#include "i2c.h"
+#include "stm32l476xx.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "i2c.h"
 
-#define RCC_AHB2ENR   (*((volatile uint32_t*)0x4002104C))
-#define RCC_APB1ENR1  (*((volatile uint32_t*)0x40021058))
-#define GPIOB_MODER   (*((volatile uint32_t*)0x48000400))
-#define GPIOB_OTYPER  (*((volatile uint32_t*)0x48000404))
-#define GPIOB_OSPEEDR (*((volatile uint32_t*)0x48000408))
-#define GPIOB_AFRH    (*((volatile uint32_t*)0x48000424))
-#define I2C1_CR1      (*((volatile uint32_t*)0x40005400))
-#define I2C1_CR2      (*((volatile uint32_t*)0x40005404))
-#define I2C1_TIMINGR  (*((volatile uint32_t*)0x40005410))
-#define I2C1_ISR      (*((volatile uint32_t*)0x40005418))
-#define I2C1_ICR      (*((volatile uint32_t*)0x4000541C))
-#define I2C1_TXDR     (*((volatile uint32_t*)0x40005428))
-#define I2C1_RXDR     (*((volatile uint32_t*)0x40005424))
-
-/* Busy-wait used only inside i2c_init(), which runs before the scheduler starts.
-   At 4 MHz MSI: ~4000 cycles per ms. */
+/* Busy-wait used only during i2c_init() before the scheduler starts.
+   At 4 MHz MSI: ~4000 cycles per ms. Used nowhere else. */
 static void busy_delay_ms(uint32_t ms)
 {
     volatile uint32_t i;
-    while(ms-- > 0U) {
-        for(i = 0U; i < 4000U; i++) {}
+    while (ms-- > 0U) {
+        for (i = 0U; i < 4000U; i++) {}
     }
 }
 
 void i2c_init(void)
 {
-    RCC_AHB2ENR  |= (1U << 1);
-    RCC_APB1ENR1 |= (1U << 21);
+    RCC->AHB2ENR  |= RCC_AHB2ENR_GPIOBEN;
+    RCC->APB1ENR1 |= RCC_APB1ENR1_I2C1EN;
     busy_delay_ms(1U);
-    GPIOB_MODER  &= ~(3U << 16); GPIOB_MODER |= (2U << 16);
-    GPIOB_MODER  &= ~(3U << 18); GPIOB_MODER |= (2U << 18);
-    GPIOB_OTYPER  |= (1U << 8) | (1U << 9);
-    GPIOB_OSPEEDR |= (3U << 16) | (3U << 18);
-    GPIOB_AFRH   &= ~(0xFFU);
-    GPIOB_AFRH   |= (4U) | (4U << 4);
-    I2C1_CR1     &= ~(1U << 0);
+
+    GPIOB->MODER  &= ~((3U << 16U) | (3U << 18U));
+    GPIOB->MODER  |=   (2U << 16U) | (2U << 18U);   /* PB8, PB9 alternate function */
+    GPIOB->OTYPER |=  (1U << 8U) | (1U << 9U);       /* open-drain — required for I2C */
+    GPIOB->OSPEEDR|=  (3U << 16U) | (3U << 18U);     /* very high speed */
+    GPIOB->AFR[1] &= ~(0xFFU);
+    GPIOB->AFR[1] |=  (4U) | (4U << 4U);             /* AF4 = I2C1 */
+
+    I2C1->CR1     &= ~I2C_CR1_PE;
     busy_delay_ms(1U);
-    I2C1_TIMINGR  = 0x00100D14U;
-    I2C1_CR1     |= (1U << 0);
+    I2C1->TIMINGR  = 0x00100D14U;                    /* 100 kHz at 4 MHz MSI — RM0351 §37.4.9 */
+    I2C1->CR1     |= I2C_CR1_PE;
     busy_delay_ms(1U);
 }
 
 uint8_t i2c_write_reg(uint8_t addr, uint8_t reg, uint8_t val)
 {
     volatile uint32_t timeout;
-    I2C1_ICR = 0x3F38U;
+
+    I2C1->ICR = 0x3F38U;
     timeout = 50000U;
-    while((I2C1_ISR & (1U << 15)) && timeout--) {}
-    I2C1_CR2 = ((uint32_t)addr << 1) | (2U << 16) | (1U << 25);
-    I2C1_CR2 |= (1U << 13);
+    while ((I2C1->ISR & I2C_ISR_BUSY) && timeout--) {}
+
+    I2C1->CR2 = ((uint32_t)addr << 1U) | (2U << 16U) | I2C_CR2_AUTOEND;
+    I2C1->CR2 |= I2C_CR2_START;
+
     timeout = 50000U;
-    while(!(I2C1_ISR & (1U << 1)) && timeout--) {}
-    if(!timeout) { return 0U; }
-    I2C1_TXDR = reg;
+    while (!(I2C1->ISR & I2C_ISR_TXIS) && timeout--) {}
+    if (!timeout) { return 0U; }
+    I2C1->TXDR = reg;
+
     timeout = 50000U;
-    while(!(I2C1_ISR & (1U << 1)) && timeout--) {}
-    if(!timeout) { return 0U; }
-    I2C1_TXDR = val;
+    while (!(I2C1->ISR & I2C_ISR_TXIS) && timeout--) {}
+    if (!timeout) { return 0U; }
+    I2C1->TXDR = val;
+
     timeout = 50000U;
-    while(!(I2C1_ISR & (1U << 5)) && timeout--) {}
+    while (!(I2C1->ISR & I2C_ISR_STOPF) && timeout--) {}
     vTaskDelay(pdMS_TO_TICKS(1U));
     return 1U;
 }
@@ -70,26 +64,31 @@ uint8_t i2c_read_reg(uint8_t addr, uint8_t reg)
 {
     volatile uint32_t timeout;
     uint8_t val;
-    I2C1_ICR = 0x3F38U;
+
+    I2C1->ICR = 0x3F38U;
     timeout = 50000U;
-    while((I2C1_ISR & (1U << 15)) && timeout--) {}
-    I2C1_CR2 = ((uint32_t)addr << 1) | (1U << 16);
-    I2C1_CR2 |= (1U << 13);
+    while ((I2C1->ISR & I2C_ISR_BUSY) && timeout--) {}
+
+    /* Write phase: send register address */
+    I2C1->CR2 = ((uint32_t)addr << 1U) | (1U << 16U);
+    I2C1->CR2 |= I2C_CR2_START;
     timeout = 50000U;
-    while(!(I2C1_ISR & (1U << 1)) && timeout--) {}
-    I2C1_TXDR = reg;
+    while (!(I2C1->ISR & I2C_ISR_TXIS) && timeout--) {}
+    I2C1->TXDR = reg;
     timeout = 50000U;
-    while(!(I2C1_ISR & (1U << 6)) && timeout--) {}
-    I2C1_CR2 |= (1U << 14);
+    while (!(I2C1->ISR & I2C_ISR_TC) && timeout--) {}
+    I2C1->CR2 |= I2C_CR2_STOP;
     vTaskDelay(pdMS_TO_TICKS(1U));
-    I2C1_ICR = 0x3F38U;
+
+    /* Read phase: receive 1 byte */
+    I2C1->ICR = 0x3F38U;
     timeout = 50000U;
-    while((I2C1_ISR & (1U << 15)) && timeout--) {}
-    I2C1_CR2 = ((uint32_t)addr << 1) | (1U << 10) | (1U << 16) | (1U << 25);
-    I2C1_CR2 |= (1U << 13);
+    while ((I2C1->ISR & I2C_ISR_BUSY) && timeout--) {}
+    I2C1->CR2 = ((uint32_t)addr << 1U) | I2C_CR2_RD_WRN | (1U << 16U) | I2C_CR2_AUTOEND;
+    I2C1->CR2 |= I2C_CR2_START;
     timeout = 50000U;
-    while(!(I2C1_ISR & (1U << 2)) && timeout--) {}
-    val = (uint8_t)I2C1_RXDR;
+    while (!(I2C1->ISR & I2C_ISR_RXNE) && timeout--) {}
+    val = (uint8_t)I2C1->RXDR;
     vTaskDelay(pdMS_TO_TICKS(1U));
     return val;
 }
@@ -98,29 +97,36 @@ uint16_t i2c_read_2bytes(uint8_t addr, uint8_t reg)
 {
     volatile uint32_t timeout;
     uint16_t result = 0U;
-    I2C1_ICR = 0x3F38U;
+
+    I2C1->ICR = 0x3F38U;
     timeout = 50000U;
-    while((I2C1_ISR & (1U << 15)) && timeout--) {}
-    I2C1_CR2 = ((uint32_t)addr << 1) | (1U << 16);
-    I2C1_CR2 |= (1U << 13);
+    while ((I2C1->ISR & I2C_ISR_BUSY) && timeout--) {}
+
+    /* Write phase: send register address */
+    I2C1->CR2 = ((uint32_t)addr << 1U) | (1U << 16U);
+    I2C1->CR2 |= I2C_CR2_START;
     timeout = 50000U;
-    while(!(I2C1_ISR & (1U << 1)) && timeout--) {}
-    I2C1_TXDR = reg;
+    while (!(I2C1->ISR & I2C_ISR_TXIS) && timeout--) {}
+    I2C1->TXDR = reg;
     timeout = 50000U;
-    while(!(I2C1_ISR & (1U << 6)) && timeout--) {}
-    I2C1_CR2 |= (1U << 14);
+    while (!(I2C1->ISR & I2C_ISR_TC) && timeout--) {}
+    I2C1->CR2 |= I2C_CR2_STOP;
     vTaskDelay(pdMS_TO_TICKS(1U));
-    I2C1_ICR = 0x3F38U;
+
+    /* Read phase: receive 2 bytes MSB-first */
+    I2C1->ICR = 0x3F38U;
     timeout = 50000U;
-    while((I2C1_ISR & (1U << 15)) && timeout--) {}
-    I2C1_CR2 = ((uint32_t)addr << 1) | (1U << 10) | (2U << 16) | (1U << 25);
-    I2C1_CR2 |= (1U << 13);
+    while ((I2C1->ISR & I2C_ISR_BUSY) && timeout--) {}
+    I2C1->CR2 = ((uint32_t)addr << 1U) | I2C_CR2_RD_WRN | (2U << 16U) | I2C_CR2_AUTOEND;
+    I2C1->CR2 |= I2C_CR2_START;
+
     timeout = 50000U;
-    while(!(I2C1_ISR & (1U << 2)) && timeout--) {}
-    result = (uint16_t)(I2C1_RXDR << 8);
+    while (!(I2C1->ISR & I2C_ISR_RXNE) && timeout--) {}
+    result = (uint16_t)(I2C1->RXDR << 8U);
+
     timeout = 50000U;
-    while(!(I2C1_ISR & (1U << 2)) && timeout--) {}
-    result |= (uint16_t)I2C1_RXDR;
+    while (!(I2C1->ISR & I2C_ISR_RXNE) && timeout--) {}
+    result |= (uint16_t)I2C1->RXDR;
     vTaskDelay(pdMS_TO_TICKS(1U));
     return result;
 }

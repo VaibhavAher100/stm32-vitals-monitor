@@ -1,6 +1,6 @@
 # STM32 Vitals Monitor
 
-Bare-metal firmware on STM32L476RG. No HAL. No CubeMX. Registers written directly from RM0351.
+Bare-metal firmware on STM32L476RG. No HAL. No CubeMX. Registers accessed via CMSIS device headers (STMicroelectronics/cmsis-device-l4).
 
 TMP117 temperature + MAX30102 PPG/BPM on a shared I2C bus. Moving average filter on raw IR signal. BPM detection from threshold crossings. IWDG watchdog with LSI oscillator. FreeRTOS V10.5.1 two-task scheduler. 3-layer architecture (application / processing / driver). MISRA-C analysed with Cppcheck.
 
@@ -30,7 +30,8 @@ FreeRTOS V10.5.1 (ARM_CM4F port). Two tasks: `task_sensor` (priority 2) reads se
 
 ```
 firmware/Core/Src/
-├── main.c          application  - FreeRTOS task_sensor + task_uart, queue, no register access
+├── main.c          application  - RTOS init; creates queue, spawns task_sensor + task_uart
+├── tasks_vitals.c  application  - task_sensor (sensors + filter + BPM + IWDG) and task_uart (queue receive + UART format)
 ├── filter.c/h      processing   - moving average, 8-sample circular buffer
 ├── bpm.c/h         processing   - BPM detection, dynamic threshold, 333 ms refractory
 ├── uart.c/h        driver       - USART2
@@ -88,36 +89,22 @@ IR raw: ~857 ambient, ~97000 with finger on sensor. BPM 111 verified on hardware
 
 ---
 
-## Bugs worth noting
-
-**USART2_BRR offset**
-
-`USART2_BRR` is at offset `0x0C` - address `0x4000440C`.
-`0x40004408` is `CR3`. Writing baud rate to `CR3` does nothing and produces no error.
-Took an afternoon to find. RM0351 section 40.8.4.
-
-**IWDG start sequence**
-
-LSI oscillator must be enabled before writing any IWDG registers. Then `0xCCCC` (start) must be written to `IWDG_KR` before `0x5555` (unlock for prescaler/reload access). If the sequence is wrong, `PVU` and `RVU` flags in `IWDG_SR` never clear and the watchdog never arms. Datasheet says write `0xCCCC` first - most example code skips LSI and gets away with it at reset, but not after a soft reboot.
-
----
-
 ## Register map
 
-| Register       | Address      | Used for |
-|----------------|--------------|----------|
-| RCC_AHB2ENR    | 0x4002104C   | GPIOA clock (bit 0), GPIOB clock (bit 1) |
-| RCC_APB1ENR1   | 0x40021058   | USART2 (bit 17), I2C1 (bit 21) |
-| RCC_CSR        | 0x40021098   | LSI oscillator enable (bit 0), ready flag (bit 1) |
-| GPIOA_MODER    | 0x48000000   | PA2 as AF (bits 5:4), PA5 as output (bits 11:10) |
-| GPIOA_AFRL     | 0x48000020   | PA2 - AF7 = USART2_TX |
-| USART2_BRR     | 0x4000440C   | 417 = 9600 baud at 4 MHz |
-| GPIOB_OTYPER   | 0x48000404   | PB8, PB9 open-drain - I2C requires this |
-| GPIOB_AFRH     | 0x48000424   | PB8, PB9 - AF4 = I2C1 |
-| I2C1_TIMINGR   | 0x40005410   | 0x00100D14 - 100 kHz at 4 MHz |
-| IWDG_KR        | 0x40003000   | 0xCCCC start, 0x5555 unlock, 0xAAAA kick |
-| IWDG_PR        | 0x40003004   | Prescaler /256 (bits 2:0 = 0x6) |
-| IWDG_RLR       | 0x40003008   | Reload value 624 = ~4 s timeout at 40 kHz LSI / 256 |
+| Register     | CMSIS access       | Used for |
+|--------------|--------------------|----------|
+| RCC_AHB2ENR  | `RCC->AHB2ENR`     | GPIOA clock, GPIOB clock |
+| RCC_APB1ENR1 | `RCC->APB1ENR1`    | USART2 (bit 17), I2C1 (bit 21) |
+| RCC_CSR      | `RCC->CSR`         | LSI oscillator enable + ready flag |
+| GPIOA_MODER  | `GPIOA->MODER`     | PA2 as AF (bits 5:4) |
+| GPIOA_AFR[0] | `GPIOA->AFR[0]`    | PA2 - AF7 = USART2_TX |
+| USART2_BRR   | `USART2->BRR`      | 417 = 9600 baud at 4 MHz |
+| GPIOB_OTYPER | `GPIOB->OTYPER`    | PB8, PB9 open-drain - I2C requires this |
+| GPIOB_AFR[1] | `GPIOB->AFR[1]`    | PB8, PB9 - AF4 = I2C1 |
+| I2C1_TIMINGR | `I2C1->TIMINGR`    | 0x00100D14 - 100 kHz at 4 MHz |
+| IWDG_KR      | `IWDG->KR`         | 0xCCCC start, 0x5555 unlock, 0xAAAA kick |
+| IWDG_PR      | `IWDG->PR`         | Prescaler /32 |
+| IWDG_RLR     | `IWDG->RLR`        | Reload 4000 = 4 s timeout at 32 kHz LSI / 32 |
 
 Full detail: `docs/registers.md`
 
@@ -137,11 +124,14 @@ See `docs/limitations.md` for the full list.
 
 ## Build
 
-1. Open `firmware/` in STM32CubeIDE
-2. Ctrl+B
-3. Drag `firmware/Debug/firmware.bin` onto `NODE_L476RG`
-4. CoolTerm - COM7, 9600 baud, 8N1, Flow Control: None
-5. Press RESET
+1. Open `firmware/` in STM32CubeIDE as the workspace
+2. In Project Properties → C/C++ Build → Settings → MCU GCC Compiler → Include paths, add:
+   - `${workspace_loc:/${ProjName}/Drivers/CMSIS/Device/ST/STM32L4xx/Include}`
+   - `${workspace_loc:/${ProjName}/Drivers/CMSIS/Include}`
+3. Ctrl+B
+4. Drag `firmware/Debug/firmware.bin` onto `NODE_L476RG`
+5. CoolTerm - COM7, 9600 baud, 8N1, Flow Control: None
+6. Press RESET
 
 ---
 

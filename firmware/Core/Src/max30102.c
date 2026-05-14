@@ -1,8 +1,5 @@
-#include "stm32l476xx.h"
 #include "max30102.h"
 #include "i2c.h"
-#include "FreeRTOS.h"
-#include "task.h"
 
 #define REG_FIFO_WR  0x04U
 #define REG_FIFO_RD  0x06U
@@ -23,49 +20,9 @@ static void busy_delay_ms(uint32_t ms)
     }
 }
 
-/* Read 3-byte FIFO entry directly over I2C — MAX30102 packs 18-bit IR
-   sample MSB-first across 3 bytes. Lower 18 bits are the sample. */
 static uint32_t read_fifo_3bytes(void)
 {
-    volatile uint32_t timeout;
-    uint32_t result = 0U;
-
-    /* Write phase: set FIFO_DATA register pointer */
-    I2C1->ICR = 0x3F38U;
-    timeout = 50000U;
-    while ((I2C1->ISR & I2C_ISR_BUSY) && timeout--) {}
-    I2C1->CR2 = ((uint32_t)MAX30102_ADDR << 1U) | (1U << 16U);
-    I2C1->CR2 |= I2C_CR2_START;
-    timeout = 50000U;
-    while (!(I2C1->ISR & I2C_ISR_TXIS) && timeout--) {}
-    I2C1->TXDR = REG_FIFO_DA;
-    timeout = 50000U;
-    while (!(I2C1->ISR & I2C_ISR_TC) && timeout--) {}
-    I2C1->CR2 |= I2C_CR2_STOP;
-    vTaskDelay(pdMS_TO_TICKS(1U));
-
-    /* Read phase: receive 3 bytes */
-    I2C1->ICR = 0x3F38U;
-    timeout = 50000U;
-    while ((I2C1->ISR & I2C_ISR_BUSY) && timeout--) {}
-    I2C1->CR2 = ((uint32_t)MAX30102_ADDR << 1U) | I2C_CR2_RD_WRN | (3U << 16U) | I2C_CR2_AUTOEND;
-    I2C1->CR2 |= I2C_CR2_START;
-
-    timeout = 50000U;
-    while (!(I2C1->ISR & I2C_ISR_RXNE) && timeout--) {}
-    result = ((uint32_t)I2C1->RXDR << 16U);
-
-    timeout = 50000U;
-    while (!(I2C1->ISR & I2C_ISR_RXNE) && timeout--) {}
-    result |= ((uint32_t)I2C1->RXDR << 8U);
-
-    timeout = 50000U;
-    while (!(I2C1->ISR & I2C_ISR_RXNE) && timeout--) {}
-    result |= (uint32_t)I2C1->RXDR;
-
-    result &= 0x3FFFFU;   /* 18-bit sample mask */
-    vTaskDelay(pdMS_TO_TICKS(1U));
-    return result;
+    return i2c_read_3bytes(MAX30102_ADDR, REG_FIFO_DA) & 0x3FFFFU;
 }
 
 uint8_t max30102_init(void)

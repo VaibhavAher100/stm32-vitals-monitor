@@ -130,3 +130,45 @@ uint16_t i2c_read_2bytes(uint8_t addr, uint8_t reg)
     vTaskDelay(pdMS_TO_TICKS(1U));
     return result;
 }
+
+uint32_t i2c_read_3bytes(uint8_t addr, uint8_t reg)
+{
+    volatile uint32_t timeout;
+    uint32_t result = 0U;
+
+    I2C1->ICR = 0x3F38U;
+    timeout = 50000U;
+    while ((I2C1->ISR & I2C_ISR_BUSY) && timeout--) {}
+
+    /* Write phase: send register address */
+    I2C1->CR2 = ((uint32_t)addr << 1U) | (1U << 16U);
+    I2C1->CR2 |= I2C_CR2_START;
+    timeout = 50000U;
+    while (!(I2C1->ISR & I2C_ISR_TXIS) && timeout--) {}
+    I2C1->TXDR = reg;
+    timeout = 50000U;
+    while (!(I2C1->ISR & I2C_ISR_TC) && timeout--) {}
+    I2C1->CR2 |= I2C_CR2_STOP;
+    vTaskDelay(pdMS_TO_TICKS(1U));
+
+    /* Read phase: receive 3 bytes MSB-first */
+    I2C1->ICR = 0x3F38U;
+    timeout = 50000U;
+    while ((I2C1->ISR & I2C_ISR_BUSY) && timeout--) {}
+    I2C1->CR2 = ((uint32_t)addr << 1U) | I2C_CR2_RD_WRN | (3U << 16U) | I2C_CR2_AUTOEND;
+    I2C1->CR2 |= I2C_CR2_START;
+
+    timeout = 50000U;
+    while (!(I2C1->ISR & I2C_ISR_RXNE) && timeout--) {}
+    result = ((uint32_t)I2C1->RXDR << 16U);
+
+    timeout = 50000U;
+    while (!(I2C1->ISR & I2C_ISR_RXNE) && timeout--) {}
+    result |= ((uint32_t)I2C1->RXDR << 8U);
+
+    timeout = 50000U;
+    while (!(I2C1->ISR & I2C_ISR_RXNE) && timeout--) {}
+    result |= (uint32_t)I2C1->RXDR;
+    vTaskDelay(pdMS_TO_TICKS(1U));
+    return result;
+}

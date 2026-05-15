@@ -1,23 +1,10 @@
 # STM32 Vitals Monitor
 
-**What it does:** TMP117 temperature + MAX30102 PPG/heart rate on STM32L476RG (Cortex-M4, Nucleo board). Readings printed over UART every 500 ms.
+Bare-metal firmware on STM32L476RG. No HAL. No CubeMX. Registers written directly from RM0351 via CMSIS device headers.
 
-**What is handwritten:** All peripheral drivers - USART2, I2C1, TMP117, MAX30102, IWDG - written in register-level C using CMSIS device headers (`stm32l476xx.h`). No HAL. No CubeMX-generated peripheral init. `syscalls.c` / `sysmem.c` are IDE-generated newlib stubs, retained unchanged.
+TMP117 temperature + MAX30102 PPG/BPM on a shared I2C bus. Moving average filter on raw IR signal. BPM detection from threshold crossings. IWDG watchdog with LSI oscillator. FreeRTOS V10.5.1 two-task scheduler. 3-layer architecture (application / processing / driver). MISRA-C analysed with Cppcheck. IEC 62304 requirements traceability in source.
 
-**Verified on hardware:** TMP117 25.3 °C. MAX30102 ambient IR ~775, finger contact ~87000. BPM 119 stable over 50+ rows. Zero IWDG resets during run.
-
-**Current architecture:** FreeRTOS V10.5.1. `task_sensor` (priority 2) reads sensors, filters IR, detects BPM, kicks IWDG, pushes to queue. `task_uart` (priority 1) blocks on queue receive and formats UART output. 3-layer rule: application never touches registers, driver never calls application, no heap allocation in project code.
-
-| What | Evidence |
-|---|---|
-| Build compiles clean | `0 errors, 0 warnings` - arm-none-eabi-gcc 14.3.1, `-DSTM32L476xx` |
-| TMP117 reads correctly | 25.3 °C ambient, rises on contact |
-| MAX30102 FIFO streams | ~775 ambient → ~87000 with finger |
-| Filter works | 8-row ramp-up and decay visible in terminal |
-| BPM detected | 119 BPM, stable 50+ rows |
-| IWDG running | No reset during continuous run; 4 s timeout, kicked every 500 ms |
-| No raw hex addresses | `grep -r "0x4[0-9A-F]\{7\}" firmware/Core/Src/` returns zero matches |
-| No heap allocation | `grep -r "malloc\|calloc\|free" firmware/Core/Src/` returns zero matches |
+Hardware-verified: TMP117 25.3 C, MAX30102 IR ~87000 with finger contact, BPM 119 stable over 50+ rows, zero IWDG resets during run.
 
 ---
 
@@ -106,6 +93,20 @@ IR raw: ~775 ambient, ~87000 with finger on sensor. BPM 119 verified on hardware
 
 ---
 
+## Bugs found during development
+
+**USART2_BRR offset**
+
+`USART2_BRR` is at offset `0x0C` from the USART2 base - address `0x4000440C`.
+`0x40004408` is `CR3`. Writing the baud rate value to `CR3` does nothing and produces no error.
+Took an afternoon to find. RM0351 section 40.8.4.
+
+**IWDG start sequence**
+
+LSI oscillator must be enabled and confirmed ready (`RCC_CSR_LSIRDY`) before writing any IWDG registers. Then `0xCCCC` (start) must be written to `IWDG_KR` before `0x5555` (unlock for prescaler/reload access). If the sequence is wrong, `PVU` and `RVU` flags in `IWDG_SR` never clear and the watchdog never arms correctly. Most example code skips the LSI ready wait and gets away with it on a clean power-on, but not reliably after a soft reboot.
+
+---
+
 ## Register map
 
 | Register     | CMSIS access       | Used for |
@@ -149,4 +150,4 @@ See `docs/limitations.md` for the full list.
 
 ---
 
-*Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg - April 2026*
+*Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg - May 2026*

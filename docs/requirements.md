@@ -194,7 +194,7 @@ Items explicitly outside the scope of the current firmware. Not unmet requiremen
 | STOP2 low-power sleep modes | `[FUTURE]` | Planned extension phase |
 | BLE wireless streaming | `[FUTURE]` | Planned via ESP32 co-processor |
 | I2C bus recovery (9-clock unstick) | `[FUTURE]` | Current recovery: IWDG reset after 4 s |
-| Unity unit tests for filter.c / bpm.c | `[FUTURE]` | Host-side test suite planned |
+| Unity unit tests for filter.c / bpm.c | Done | `tests/` - 15 automated tests, host-runnable |
 | Non-volatile storage | Out of scope | No SD card or EEPROM on current hardware |
 | Wall-clock timestamps on readings | Out of scope | Would require RTC peripheral |
 

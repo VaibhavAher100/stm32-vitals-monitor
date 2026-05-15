@@ -429,6 +429,73 @@ No IWDG resets observed.
 
 ---
 
+### TC-15 - Unity Unit Tests: filter.c (Host)
+
+| Field | Detail |
+|---|---|
+| **Method** | Automated unit test (host machine, no hardware required) |
+| **Requirements** | REQ-FIL-01, REQ-FIL-02, REQ-FIL-03, REQ-FIL-04, REQ-FIL-05, REQ-FIL-06 |
+| **Evidence** | `tests/test_filter.c` - 8 test cases |
+
+**Procedure:**
+```
+cd tests
+mingw32-make test_filter && ./test_filter
+```
+
+**Test cases:**
+- `test_filter_init_zeros_all_fields` - all struct members zero after init
+- `test_filter_single_value_returns_that_value` - first update divides by 1
+- `test_filter_partial_fill_three_values` - [100,200,300] -> average 200
+- `test_filter_full_window_averages_all_eight` - [100..800] -> average 450
+- `test_filter_rollover_drops_oldest` - 9th sample replaces oldest, not all 9
+- `test_filter_all_identical_values` - 8 x 75000 -> average 75000
+- `test_filter_count_saturates_at_window_size` - 16 updates, count stays 8
+- `test_filter_reinit_resets_used_filter` - init after use restores clean state
+
+**Actual result:** 8/8 PASS. Output:
+```
+8 Tests 0 Failures 0 Ignored
+OK
+```
+
+**Status: PASS**
+
+---
+
+### TC-16 - Unity Unit Tests: bpm.c (Host)
+
+| Field | Detail |
+|---|---|
+| **Method** | Automated unit test (host machine, no hardware required) |
+| **Requirements** | REQ-BPM-01, REQ-BPM-02, REQ-BPM-03, REQ-BPM-04, REQ-BPM-05 |
+| **Evidence** | `tests/test_bpm.c` - 7 test cases. `xTaskGetTickCount()` stubbed in `tests/stubs/`. |
+
+**Procedure:**
+```
+cd tests
+mingw32-make test_bpm && ./test_bpm
+```
+
+**Test cases:**
+- `test_bpm_invalid_before_two_crossings` - BPM_INVALID on fresh detector
+- `test_bpm_no_crossing_during_history_fill` - no crossing fires until 8-sample window full
+- `test_bpm_invalid_after_one_crossing` - BPM_INVALID after exactly one crossing
+- `test_bpm_valid_after_two_crossings` - 600ms interval -> 100 BPM
+- `test_bpm_refractory_rejects_fast_crossing` - 200ms crossing rejected, stays invalid
+- `test_bpm_known_interval_500ms_gives_120bpm` - 500ms interval -> 120 BPM
+- `test_bpm_flat_signal_never_crosses` - constant value, threshold == signal, no crossing
+
+**Actual result:** 7/7 PASS. Output:
+```
+7 Tests 0 Failures 0 Ignored
+OK
+```
+
+**Status: PASS**
+
+---
+
 ## Test Summary
 
 | TC-ID | Description | Method | Status |
@@ -447,12 +514,14 @@ No IWDG resets observed.
 | TC-12 | BPM detection at rest | Hardware | PASS |
 | TC-13 | FreeRTOS scheduler, two-task operation, IWDG kick | Hardware | PASS |
 | TC-14 | CMSIS build: zero errors, hardware verified | Hardware | PASS |
+| TC-15 | Unity unit tests: filter.c - 8 test cases | Automated | PASS |
+| TC-16 | Unity unit tests: bpm.c - 7 test cases | Automated | PASS |
 
-**14 / 14 test cases PASS.**
+**16 / 16 test cases PASS. 15 automated (host-runnable).**
 
 ---
 
-*Document version: 2.0*
-*Updated: May 2026 - requirements.md restored and updated (v2.0), traceability comments added to source*
+*Document version: 3.0*
+*Updated: May 2026 - Unity unit tests added (TC-15, TC-16)*
 *Author: Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg*
 *Hardware: STM32 Nucleo-L476RG - TMP117 - MAX30102*

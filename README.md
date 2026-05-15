@@ -136,4 +136,12 @@ See `docs/limitations.md` for the full list.
 
 ---
 
+---
+
+## Development timeline
+
+Built April 4-9, 2026. Driver layer and three-sensor bring-up on April 4 (one evening, hardware debug included). FreeRTOS integration and the IWDG fix on April 7. Two-task split, CMSIS migration, and hardware validation on April 8-9.
+
+---
+
 *Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg - May 2026*

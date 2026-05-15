@@ -261,7 +261,7 @@ grep -rn "malloc\|calloc\|free\|realloc" firmware/Core/Src/ firmware/Core/Inc/
 
 ---
 
-### TC-09 - CMSIS Register Access: No Raw Hex Addresses
+### TC-09 - CMSIS Register Access: No Hardcoded Peripheral Base Addresses
 
 | Field | Detail |
 |---|---|
@@ -270,7 +270,11 @@ grep -rn "malloc\|calloc\|free\|realloc" firmware/Core/Src/ firmware/Core/Inc/
 
 **Procedure:**
 Confirm all driver files use CMSIS peripheral struct access (`PERIPHERAL->REGISTER`)
-and contain zero raw hexadecimal register address macros.
+and contain zero hardcoded peripheral base address macros (0x4xxxxxxx range).
+
+Note: bitmask constants (e.g., `ICR = 0x3F38U`) and protocol-defined values
+(e.g., IWDG keys `0xCCCCU`, `0x5555U`, `0xAAAAU`) are not peripheral addresses
+and are not checked by this grep.
 
 ```
 grep -n "0x4[0-9A-Fa-f]\{7\}" firmware/Core/Src/uart.c firmware/Core/Src/i2c.c \
@@ -508,7 +512,7 @@ OK
 | TC-06 | Moving average filter behaviour | Hardware | PASS |
 | TC-07 | 3-layer architecture: no cross-layer register access | Static | PASS |
 | TC-08 | No dynamic allocation, no recursion | Static | PASS |
-| TC-09 | CMSIS register access: zero raw hex addresses | Static | PASS |
+| TC-09 | CMSIS register access: no hardcoded peripheral base addresses | Static | PASS |
 | TC-10 | SysTick 1 ms tick advances correctly | Hardware | PASS |
 | TC-11 | IWDG resets board if task hangs | Hardware | PASS |
 | TC-12 | BPM detection at rest | Hardware | PASS |

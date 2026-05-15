@@ -1,6 +1,6 @@
 # Limitations - STM32 Vitals Monitor
 
-Known limitations, constraints, and deliberate scope boundaries.
+Known limitations.
 
 ---
 

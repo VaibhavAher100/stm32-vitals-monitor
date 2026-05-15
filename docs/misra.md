@@ -103,6 +103,8 @@ excluded by REQ-NF-05. The `volatile` qualifier was always present.
 
 ### Rule 12.2 — Operands of shift operators (43 findings)
 
+**Status on current CMSIS codebase:** Still present. Shift patterns unchanged (e.g., `RCC->AHB2ENR |= (1U << 0)`). CMSIS struct access does not remove the shifts.
+
 **Location:** Register bit manipulation throughout `uart.c`, `i2c.c`, `max30102.c`.
 
 **Example:**
@@ -129,6 +131,8 @@ definitions that add no clarity and increase the maintenance surface.
 
 ### Rule 13.3 — Side effects in increment/decrement expressions (1 finding)
 
+**Status on current CMSIS codebase:** Still present. `uart_int()` logic unchanged.
+
 **Location:** `uart.c:39` — `uart_int()` function.
 
 **Example:**
@@ -150,6 +154,8 @@ and the output is verified by TC-01.
 ---
 
 ### Rule 13.5 — Side effects in the right-hand side of `&&` or `||` (22 findings)
+
+**Status on current CMSIS codebase:** Still present. `while(... && timeout--)` polling pattern unchanged in `i2c.c`.
 
 **Location:** I2C polling loops in `i2c.c` and `max30102.c`.
 
@@ -180,7 +186,9 @@ cycles per polling loop. Documented as a known limitation in `docs/limitations.m
 
 ### Rule 14.4 — Condition not essentially Boolean (2 findings remaining)
 
-**Location:** `main.c:35` (`if(tmp117_init())`), `main.c:41` (`if(max30102_init())`).
+**Status on current CMSIS codebase:** Still present. `if(tmp117_init())` pattern unchanged; init functions now called from `tasks_vitals.c` rather than `main.c` but the pattern is identical.
+
+**Location:** `tasks_vitals.c` — `if(tmp117_init())`, `if(max30102_init())`.
 
 Note: `while(*s)` in `uart.c` and `while(n--)` in delay functions were eliminated
 as side-effects of the Rule 17.8 and Rule 5.9 fixes applied in this analysis.
@@ -204,7 +212,9 @@ is documented in the function contracts.
 
 ### Rule 15.5 — A function should have a single point of exit (4 findings)
 
-**Location:** `i2c.c:47,51` — early returns on timeout in `i2c_write_reg()`.
+**Status on current CMSIS codebase:** Still present. Early return on timeout pattern unchanged across i2c.c transfer functions.
+
+**Location:** `i2c.c` — early returns on timeout in `i2c_write_reg()` and read functions.
 
 **Example:**
 ```c

@@ -1,6 +1,6 @@
 # STM32 Vitals Monitor
 
-Bare-metal firmware on STM32L476RG. No HAL. No CubeMX. Registers written directly from RM0351 via CMSIS device headers.
+Bare-metal firmware on STM32L476RG. No HAL. No CubeMX-generated peripheral init. All peripheral drivers written from RM0351 using CMSIS device headers (`stm32l476xx.h`). `syscalls.c` and `sysmem.c` are IDE-generated newlib stubs, retained unchanged.
 
 TMP117 temperature + MAX30102 PPG/BPM on a shared I2C bus. Moving average filter on raw IR signal. BPM detection from threshold crossings. IWDG watchdog with LSI oscillator. FreeRTOS V10.5.1 two-task scheduler. 3-layer architecture (application / processing / driver). MISRA-C analysed with Cppcheck. IEC 62304 requirements traceability in source.
 
@@ -41,7 +41,7 @@ firmware/Core/Src/
 └── max30102.c/h    driver       - MAX30102 FIFO init + read
 ```
 
-Rules: application never touches registers. Driver never calls application. No heap allocation in project code (FreeRTOS heap_4 is present but only used by the RTOS kernel itself).
+Rules: application never touches registers. Driver never calls application. No heap allocation in project code (FreeRTOS heap_4 used by kernel only). `syscalls.c`/`sysmem.c` are newlib stubs from STM32CubeIDE - not project code.
 
 ---
 
@@ -90,20 +90,6 @@ MAX30102 OK
 ```
 
 IR raw: ~775 ambient, ~87000 with finger on sensor. BPM 119 verified on hardware. Filter window is 8 samples - ramp-up visible in rows 3-8, decay after removal.
-
----
-
-## Bugs found during development
-
-**USART2_BRR offset**
-
-`USART2_BRR` is at offset `0x0C` from the USART2 base - address `0x4000440C`.
-`0x40004408` is `CR3`. Writing the baud rate value to `CR3` does nothing and produces no error.
-Took an afternoon to find. RM0351 section 40.8.4.
-
-**IWDG start sequence**
-
-LSI oscillator must be enabled and confirmed ready (`RCC_CSR_LSIRDY`) before writing any IWDG registers. Then `0xCCCC` (start) must be written to `IWDG_KR` before `0x5555` (unlock for prescaler/reload access). If the sequence is wrong, `PVU` and `RVU` flags in `IWDG_SR` never clear and the watchdog never arms correctly. Most example code skips the LSI ready wait and gets away with it on a clean power-on, but not reliably after a soft reboot.
 
 ---
 

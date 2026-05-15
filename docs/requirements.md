@@ -1,12 +1,10 @@
-# Software Requirements Specification - STM32 Vitals Monitor
+# Requirements - STM32 Vitals Monitor
 
-This document defines the requirements that the current firmware implements.
-Each requirement has a unique ID so that test cases (testing.md) and design
-decisions can reference them by ID rather than by description.
+Numbered requirements derived from the implemented firmware. IDs are used in
+testing.md (verification) and in source file traceability comments.
 
-All requirements are derived from the implemented firmware. Nothing here is
-aspirational. Items that are planned but not yet implemented are listed in
-Section 5 (Out of Scope) and marked `[FUTURE]`.
+Nothing here is aspirational - every requirement reflects code that exists and
+has been verified. Planned items are in Section 5 marked `[FUTURE]`.
 
 ---
 
@@ -202,8 +200,5 @@ Items explicitly outside the scope of the current firmware. Not unmet requiremen
 
 ---
 
-*Document version: 2.0*
-*Firmware: FreeRTOS two-task architecture, CMSIS register access, BPM detection, IWDG*
-*Updated: May 2026 - added RTOS, IWDG, BPM, timing requirements; updated REQ-NF-04 for CMSIS; moved completed [FUTURE] items*
+*v2.0 - May 2026*
 *Author: Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg*
-*References: RM0351 - TMP117 datasheet (Texas Instruments) - MAX30102 datasheet (Analog Devices) - FreeRTOS V10.5.1*

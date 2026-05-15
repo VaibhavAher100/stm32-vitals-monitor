@@ -89,20 +89,20 @@ Temp(C) | IR raw  | IR filt | BPM
 TMP117   OK
 MAX30102 OK
 ========================
-  25.3  |     778 |     778 | ---    <- ambient, no finger
+  25.3  |     778 |     778 | ---
   25.3  |     780 |     779 | ---
-  25.3  |   62657 |    8615 | 119   <- finger contact; filter climbing, BPM already locked
+  25.3  |   62657 |    8615 | 119
   25.3  |   70174 |   17288 | 119
   25.3  |   80963 |   35808 | 119
   25.3  |   87266 |   46619 | 119
   25.3  |   87750 |   79062 | 119
-  25.3  |   87543 |   87611 | 119   <- filter window full
+  25.3  |   87543 |   87611 | 119
   25.3  |   87352 |   87419 | 119
-  25.3  |    1077 |   11502 | 119   <- finger removed; filter decaying, BPM holds last value
+  25.3  |    1077 |   11502 | 119
   25.3  |    1071 |    1074 | 119
 ```
 
-IR raw: ~775 ambient, ~87000 with finger on sensor. BPM 119 verified on hardware. Filter ramp-up (8-sample window) visible across rows 3–8; decay visible after removal.
+IR raw: ~775 ambient, ~87000 with finger on sensor. BPM 119 verified on hardware. Filter window is 8 samples - ramp-up visible in rows 3-8, decay after removal.
 
 ---
 

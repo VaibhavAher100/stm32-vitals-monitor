@@ -1,3 +1,4 @@
+/* Implements: REQ-I2C-01, REQ-I2C-02, REQ-I2C-03, REQ-I2C-04, REQ-I2C-05, REQ-I2C-06, REQ-I2C-07 */
 #include "stm32l476xx.h"
 #include "FreeRTOS.h"
 #include "task.h"

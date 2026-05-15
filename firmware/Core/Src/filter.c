@@ -1,3 +1,4 @@
+/* Implements: REQ-FIL-01, REQ-FIL-02, REQ-FIL-03, REQ-FIL-04, REQ-FIL-05, REQ-FIL-06 */
 #include "filter.h"
 
 void filter_init(Filter *f)

@@ -1,8 +1,6 @@
 # Limitations - STM32 Vitals Monitor
 
-This document records all known limitations, constraints, and design boundaries of this project.
-Acknowledging limitations is a mark of engineering rigour, not weakness.
-Every limitation listed here was a deliberate scope decision, not an oversight.
+Known limitations, constraints, and deliberate scope boundaries.
 
 ---
 
@@ -120,21 +118,8 @@ They are available from Texas Instruments and Analog Devices respectively.
 
 ---
 
-## Out of Scope (Deliberate)
-
-The following are explicitly out of scope for this project and are not treated as limitations:
-
-| Item | Reason Out of Scope |
-|---|---|
-| BLE or WiFi transmission | Would require additional hardware and significantly increase project scope |
-| Display output (OLED/LCD) | UART terminal is sufficient for demonstrating sensor functionality |
-| PCB design | Breadboard prototype is appropriate for a portfolio project at this stage |
-| Production enclosure | Physical packaging is not relevant to the firmware demonstration objective |
-| Battery management | Mains-connected via USB throughout development |
-| IEC 62304 compliance | This is a learning and portfolio project, not a regulated medical device |
-
 ---
 
-*Last updated: April 2026*
+*Last updated: May 2026*
 *Project: STM32 Vitals Monitor - Bare-Metal Firmware*
 *Author: Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg*

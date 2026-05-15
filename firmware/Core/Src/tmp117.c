@@ -1,3 +1,4 @@
+/* Implements: REQ-TMP-01, REQ-TMP-02, REQ-TMP-03, REQ-TMP-04, REQ-TMP-05 */
 #include "tmp117.h"
 #include "i2c.h"
 

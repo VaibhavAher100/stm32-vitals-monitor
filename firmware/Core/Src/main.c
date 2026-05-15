@@ -1,3 +1,5 @@
+/* Implements: REQ-SYS-01, REQ-SYS-02, REQ-RTOS-01, REQ-RTOS-05, REQ-NF-07, REQ-STK-01 */
+
 /**
  * STM32 Vitals Monitor - Application Layer (Phase 4: FreeRTOS)
  * Bare-metal, no HAL. All hardware access via driver layer.

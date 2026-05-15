@@ -452,7 +452,7 @@ No IWDG resets observed.
 
 ---
 
-*Document version: 1.0*
+*Document version: 2.0*
+*Updated: May 2026 - requirements.md restored and updated (v2.0), traceability comments added to source*
 *Author: Vaibhav Aher - M.Sc. ICT, FAU Erlangen-Nürnberg*
-*Date: April 2026*
-*Hardware: STM32 Nucleo-L476RG · TMP117 · MAX30102*
+*Hardware: STM32 Nucleo-L476RG - TMP117 - MAX30102*

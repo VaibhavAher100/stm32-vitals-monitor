@@ -1,3 +1,4 @@
+/* Implements: REQ-WDG-01, REQ-WDG-02 */
 #include "stm32l476xx.h"
 #include "iwdg.h"
 

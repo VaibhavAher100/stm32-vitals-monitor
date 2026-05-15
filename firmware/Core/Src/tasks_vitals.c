@@ -1,5 +1,8 @@
+/* Implements: REQ-SYS-03, REQ-SYS-04, REQ-SYS-05, REQ-RTOS-02, REQ-RTOS-03,
+               REQ-RTOS-04, REQ-OUT-01, REQ-OUT-02, REQ-OUT-03, REQ-OUT-04 */
+
 /**
- * tasks_vitals.c — FreeRTOS task definitions for the vitals monitor.
+ * tasks_vitals.c - FreeRTOS task definitions for the vitals monitor.
  *
  * task_sensor  (priority 2): reads sensors, filters, detects BPM, sends to queue.
  * task_uart    (priority 1): blocks on queue, formats and transmits UART row.

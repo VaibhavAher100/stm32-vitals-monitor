@@ -1,3 +1,4 @@
+/* Implements: REQ-UART-01, REQ-UART-02, REQ-UART-03, REQ-UART-04, REQ-UART-05 */
 #include "stm32l476xx.h"
 #include "uart.h"
 

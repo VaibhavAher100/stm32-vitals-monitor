@@ -1,3 +1,5 @@
+/* Implements: REQ-MAX-01, REQ-MAX-02, REQ-MAX-03, REQ-MAX-04, REQ-MAX-05,
+               REQ-MAX-06, REQ-MAX-07, REQ-MAX-08, REQ-MAX-09, REQ-MAX-10 */
 #include "max30102.h"
 #include "i2c.h"
 

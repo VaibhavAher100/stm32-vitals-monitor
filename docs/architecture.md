@@ -2,92 +2,82 @@
 
 ## Overview
 
-This project follows a deliberate two-phase development strategy:
+Two development phases visible in git history:
 
-1. **Prototype phase** - All code in `main.c`. Every peripheral driver, signal processing
-   function, and application logic lives in one file. This phase prioritises getting verified
-   hardware output before introducing structural complexity.
+1. **Prototype phase** - All code in `main.c`. Gets verified hardware output first, structure second.
 
-2. **Refactor phase** - Once all sensors produce clean verified output, the monolithic `main.c`
-   is split into a three-layer architecture. The refactor commit in the Git history marks this
-   transition explicitly.
+2. **Refactor phase** - Monolithic `main.c` split into a three-layer architecture once sensors produced clean output. The refactor commit marks this transition.
 
-This approach reflects how professional embedded firmware teams work: prototype fast, then
-structure deliberately. The Git history preserves both phases, demonstrating the reasoning
-behind architectural decisions rather than presenting only the final polished result.
+Phase 4 added FreeRTOS: `main.c` now owns scheduler startup and task creation. Measurement logic lives in `tasks_vitals.c`.
 
 ---
 
-## Three-Layer Architecture (Post-Refactor)
+## Architecture (Current - FreeRTOS + Three-Layer)
 
 ```
 ┌─────────────────────────────────────────────────────┐
 │                  APPLICATION LAYER                  │
-│                     main.c                          │
+│          main.c + tasks_vitals.c                    │
 │                                                     │
-│  System initialisation, main loop, output           │
-│  formatting, alert thresholds, UART printing.       │
+│  main.c: RTOS init, queue create, task spawn        │
+│  task_sensor: reads sensors, filters, detects BPM,  │
+│               kicks IWDG, posts to vitals_queue     │
+│  task_uart: receives from queue, formats UART output │
 │  No direct register access.                         │
 └───────────────────┬─────────────────────────────────┘
                     │ calls
 ┌───────────────────▼─────────────────────────────────┐
 │                  PROCESSING LAYER                   │
-│                   filter.c / filter.h               │
+│           filter.c / filter.h                       │
+│           bpm.c / bpm.h                             │
 │                                                     │
-│  Moving average filter (circular buffer).           │
-│  Threshold detection.                               │
+│  Moving average filter (circular buffer, 8 samples) │
+│  BPM detector (dynamic threshold, rising-edge)      │
 │  No register access. No UART calls.                 │
+│  Note: bpm.c uses xTaskGetTickCount() for timing.   │
 └───────────────────┬─────────────────────────────────┘
                     │ calls
 ┌───────────────────▼─────────────────────────────────┐
 │                   DRIVER LAYER                      │
-│  uart.c/h   i2c.c/h   tmp117.c/h   max30102.c/h    │
+│  uart  i2c  tmp117  max30102  iwdg                  │
 │                                                     │
-│  Direct register writes only.                       │
+│  CMSIS struct register writes only.                 │
 │  Hardware initialisation and raw sensor reads.      │
 │  No application logic. No signal processing.        │
 └─────────────────────────────────────────────────────┘
                     │ writes to
 ┌───────────────────▼─────────────────────────────────┐
 │                   HARDWARE                          │
-│     STM32L476RG  │  TMP117  │  MAX30102             │
+│     STM32L476RG  |  TMP117  |  MAX30102             │
 └─────────────────────────────────────────────────────┘
 ```
 
----
-
-## Layer Rules - Non-Negotiable
-
-These rules are enforced at the refactor stage and maintained throughout:
-
-| Rule | Reason |
-|---|---|
-| Driver layer never calls application layer | Prevents circular dependencies |
-| Application layer never writes to registers | Keeps hardware abstraction clean |
-| Processing layer never accesses hardware directly | Enables unit testing of filter logic |
-| Each layer communicates only with the layer directly below | Maintains clean separation |
+Three rules: application never touches registers. Driver never calls application. Processing layer has no hardware dependencies (except bpm.c FreeRTOS tick access).
 
 ---
 
-## File Structure (Post-Refactor Target)
+## File Structure
 
 ```
 firmware/Core/Src/
-├── main.c           Application layer - system init, main loop, output
-├── uart.c           UART driver - register-level USART2 configuration and transmit
-├── i2c.c            I2C driver - register-level I2C1 configuration, read/write
-├── tmp117.c         TMP117 driver - sensor init, register read, temperature conversion
-├── max30102.c       MAX30102 driver - sensor init, FIFO read, raw IR data
-├── filter.c         Processing layer - circular buffer moving average filter
-├── syscalls.c       System call stubs (auto-generated, do not modify)
-└── sysmem.c         Memory management stubs (auto-generated, do not modify)
+├── main.c           Application - RTOS init, queue create, task spawn
+├── tasks_vitals.c   Application - task_sensor and task_uart implementations
+├── filter.c         Processing  - 8-sample circular buffer moving average
+├── bpm.c            Processing  - dynamic threshold BPM detection
+├── uart.c           Driver      - USART2 register-level init and transmit
+├── i2c.c            Driver      - I2C1 register-level init, read, write
+├── tmp117.c         Driver      - TMP117 init and temperature read
+├── max30102.c       Driver      - MAX30102 FIFO init and IR read
+├── iwdg.c           Driver      - IWDG init and kick
+├── syscalls.c       Newlib stubs (IDE-generated, do not modify)
+└── sysmem.c         Memory stubs (IDE-generated, do not modify)
 
 firmware/Core/Inc/
-├── uart.h           UART function declarations
-├── i2c.h            I2C function declarations
-├── tmp117.h         TMP117 function declarations and register defines
-├── max30102.h       MAX30102 function declarations and register defines
-└── filter.h         Filter function declarations and type definitions
+├── tasks_vitals.h   VitalsMsg struct, queue handle declaration
+├── filter.h         Filter struct and function declarations
+├── bpm.h            BpmDetector struct, constants, function declarations
+├── uart.h, i2c.h, tmp117.h, max30102.h, iwdg.h
+└── FreeRTOSConfig.h FreeRTOS configuration (4 MHz, 1 kHz tick, heap_4)
 ```
 
 ---
@@ -96,49 +86,44 @@ firmware/Core/Inc/
 
 ### No HAL
 
-The Hardware Abstraction Layer (HAL) provided by STM32CubeMX is intentionally not used.
-Every peripheral is configured by writing directly to the registers documented in RM0351.
+Every peripheral configured by direct register writes via CMSIS device headers (`stm32l476xx.h`), not STM32CubeMX HAL.
 
-Reason: HAL abstracts away the register-level details that this project is specifically designed
-to demonstrate. A recruiter or engineer reviewing this code should see direct register writes,
-not generated HAL calls that hide the actual configuration.
+Reason: this project exists to show register-level work. HAL hides the actual configuration.
 
-### No Dynamic Memory Allocation
+### No Dynamic Memory Allocation in Project Code
 
-No `malloc`, `calloc`, or `free` is used anywhere in this project.
-All buffers are statically allocated at compile time.
+No `malloc`, `calloc`, or `free` in project source files. FreeRTOS heap_4 is present for kernel use (task stacks, queue buffers) only.
 
-Reason: Dynamic allocation in embedded firmware introduces non-deterministic behaviour,
-heap fragmentation risk, and undefined failure modes. Safety-critical embedded domains
-(IEC 62304, MISRA C) explicitly prohibit or restrict dynamic allocation.
+Reason: dynamic allocation in embedded firmware is non-deterministic. MISRA C and IEC 62304 restrict or prohibit it. Stack-only allocation gives deterministic memory layout.
 
 ### No Recursion
 
-No recursive function calls are used.
-All loops use iterative constructs.
+All loops are iterative. No recursive calls.
 
-Reason: Recursion makes stack depth non-deterministic, which is unacceptable in
-a microcontroller with 128KB RAM and no memory protection unit (MPU) active.
+Reason: recursion makes stack depth non-deterministic on a 128 KB SRAM device with no MPU.
 
-### Volatile on All Register Accesses
+### CMSIS Register Access
 
-Every register access uses `volatile uint32_t*` casting.
+Register access uses CMSIS peripheral struct pointers (`RCC->APB1ENR1`, `IWDG->KR`, etc.) rather than hand-defined `volatile uint32_t *` macros. CMSIS headers are the vendor-maintained definition of the register map.
 
-Reason: Without `volatile`, the compiler may optimise away register writes it cannot
-observe side effects from - for example, polling a status bit in a loop.
+### FreeRTOS Queue over Shared Globals
+
+task_sensor and task_uart communicate through a depth-1 queue (xQueueOverwrite), not shared globals.
+
+Reason: a context switch mid-copy of a shared struct produces a partially-written value. Queue transfer is atomic at the message level. depth-1 means task_uart always gets the latest reading, never a stale one.
 
 ---
 
 ## Clock Configuration
 
-System clock: MSI (Multi-Speed Internal) oscillator at 4 MHz after reset.
-No external crystal. No PLL. Default power-on configuration.
+System clock: MSI at 4 MHz (default power-on). No PLL, no external crystal.
 
-BRR calculation for UART: 4,000,000 / 9600 = 417 (rounded).
-I2C timing register: 0x00100D14 for 100 kHz standard mode at 4 MHz.
+UART BRR: 4,000,000 / 9600 = 417.
+I2C TIMINGR: 0x00100D14 for 100 kHz at 4 MHz.
+FreeRTOS tick: 1 ms (configTICK_RATE_HZ = 1000).
 
 ---
 
-*Last updated: March 2026*
+*Last updated: May 2026*
 *Hardware: STM32 Nucleo-L476RG*
 *Reference: RM0351 STM32L47xxx/L48xxx Reference Manual*

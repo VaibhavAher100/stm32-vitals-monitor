@@ -1,12 +1,13 @@
 # MISRA C Analysis - STM32 Vitals Monitor
 
-> **Note:** This analysis was run on the codebase before the CMSIS refactor
-> (commit 7b34efe) and before the FreeRTOS integration (Phase 4).
-> The source files analyzed were: main.c, filter.c, uart.c, i2c.c, tmp117.c, max30102.c.
-> Files added in later phases (tasks_vitals.c, bpm.c, iwdg.c) have not yet been analyzed.
-> Rule 11.4 deviations documented below are now obsolete - the CMSIS refactor replaced
-> all raw volatile pointer casts with CMSIS struct access (RCC->, USART2->, etc.),
-> which does not trigger Rule 11.4. Re-run pending on the current CMSIS codebase.
+> **MISRA addon status (May 2026):** Cppcheck 2.20.0 with misra.py was re-run on the
+> full current codebase (9 project source files including tasks_vitals.c, bpm.c, iwdg.c).
+> The MISRA addon requires a commercially-licensed rules text file not included here.
+> Standard cppcheck analysis (--enable=style,warning,performance,portability) on all 9
+> project source files: **zero findings**. Rule 11.4 deviations below are now obsolete -
+> the CMSIS refactor replaced all raw volatile pointer casts with CMSIS struct access.
+> Two variableScope findings in bpm.c (now/elapsed declared too broadly) were found and
+> fixed (commit on main, May 2026).
 
 ## Tool
 

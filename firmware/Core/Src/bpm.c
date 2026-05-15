@@ -45,8 +45,6 @@ static uint32_t compute_threshold(const BpmDetector *b)
 void bpm_update(BpmDetector *b, uint32_t ir_filt)
 {
     uint32_t threshold;
-    uint32_t now;
-    uint32_t elapsed;
 
     b->history[b->hist_idx] = ir_filt;
     b->hist_idx = (uint8_t)((b->hist_idx + 1U) % (uint8_t)BPM_HISTORY);
@@ -64,13 +62,13 @@ void bpm_update(BpmDetector *b, uint32_t ir_filt)
 
     /* Rising-edge threshold crossing: previous sample below, current at or above */
     if ((b->prev_val < threshold) && (ir_filt >= threshold)) {
-        now = (uint32_t)xTaskGetTickCount();
+        uint32_t now = (uint32_t)xTaskGetTickCount();
 
         if (b->cross_count == 0U) {
             b->last_cross_ms = now;
             b->cross_count   = 1U;
         } else {
-            elapsed = now - b->last_cross_ms; /* unsigned subtraction handles tick rollover */
+            uint32_t elapsed = now - b->last_cross_ms; /* unsigned subtraction handles tick rollover */
             if (elapsed >= BPM_REFRACTORY_MS) {
                 b->interval_ms   = elapsed;
                 b->last_cross_ms = now;

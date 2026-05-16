@@ -172,7 +172,7 @@ nav {
 .hero-content {
   position: relative;
   z-index: 2;
-  padding: 0 48px 72px;
+  padding: max(96px, 10vh) 48px 72px;
   max-width: 920px;
 }
 
@@ -203,10 +203,10 @@ nav {
 
 h1 {
   font-family: var(--font-tight);
-  font-size: clamp(52px, 8vw, 100px);
+  font-size: clamp(40px, 8vw, 100px);
   font-weight: 700;
-  line-height: 0.92;
-  letter-spacing: -0.035em;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
   color: var(--ink-0);
   margin-bottom: 32px;
 }
@@ -760,7 +760,7 @@ footer {
 @media (min-width: 769px) and (max-width: 1024px) {
   .wrap { padding: 0 32px; }
   nav { padding: 16px 32px; }
-  .hero-content { padding: 0 32px 64px; }
+  .hero-content { padding: max(88px, 10vh) 32px 64px; }
   .section-header { grid-template-columns: 220px 1fr; gap: 40px; }
   .arch-layer { grid-template-columns: 120px 1fr; }
   .arch-files { font-size: 10px; padding: 18px 14px; }
@@ -788,6 +788,14 @@ footer {
     flex-wrap: wrap;
   }
   .nav-links a { font-size: 11px; }
+
+  /* Hero: top padding clears the two-line mobile nav (~90px) */
+  .hero-content { padding: 110px 20px 48px; }
+  /* Compact verify-strip on mobile to save vertical space */
+  .verify-strip { line-height: 1.8; }
+  /* Tighter hero spacing on small screens */
+  .hero-desc { margin-bottom: 24px; }
+  h1 { font-size: clamp(36px, 11vw, 52px); margin-bottom: 20px; }
 
   .scope-two-col { grid-template-columns: 1fr; }
 

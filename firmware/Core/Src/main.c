@@ -35,7 +35,7 @@ int main(void)
     uart_str("========================\r\n");
     uart_str("STM32 Vitals Monitor\r\n");
     uart_str("========================\r\n");
-    uart_str("Temp(C) | IR raw  | IR filt | BPM\r\n");
+    uart_str("Temp(C) | RED raw | RED filt| BPM\r\n");
     uart_str("--------+---------+---------+----\r\n");
 
     /* Depth-1 queue: sensor overwrites stale reading if UART is slow */

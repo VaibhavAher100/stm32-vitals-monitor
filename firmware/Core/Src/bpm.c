@@ -3,31 +3,49 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+/* Minimum peak-to-peak range over the history window to accept crossings.
+   Hardware measures ~500-count AC swing at 12.6 mA LED on Nucleo-L476RG. */
+#define PPG_MIN_AMPLITUDE 8U
+
+/* Hysteresis band around the midpoint threshold.
+   Dead zone = 2 * HYST. Must be < half the expected AC amplitude.
+   16-count dead zone is well below the measured ~500-count signal swing. */
+#define PPG_HYSTERESIS    8U
+
 void bpm_init(BpmDetector *b)
 {
     uint8_t i;
     for (i = 0U; i < (uint8_t)BPM_HISTORY; i++) {
         b->history[i] = 0U;
     }
-    b->hist_idx      = 0U;
-    b->hist_count    = 0U;
-    b->prev_val      = 0U;
+    b->hist_idx         = 0U;
+    b->hist_count       = 0U;
+    b->prev_val         = 0U;
     b->last_cross_ticks = 0U;
     b->interval_ticks   = 0U;
-    b->cross_count   = 0U;
+    b->cross_count      = 0U;
+    b->below_lower      = 1U; /* assume we start in the lower band */
+}
+
+void bpm_reset(BpmDetector *b)
+{
+    b->cross_count    = 0U;
+    b->interval_ticks = 0U;
+    b->hist_count     = 0U;
+    b->hist_idx       = 0U;
+    b->prev_val       = 0U;
+    b->below_lower    = 1U;
 }
 
 /* Dynamic threshold: midpoint of rolling min/max over the history window.
-   Adapts to sensor proximity changes and ambient light drift. */
+   Returns 0 (sentinel) if signal amplitude is too small to be a real PPG pulse. */
 static uint32_t compute_threshold(const BpmDetector *b)
 {
     uint8_t  i;
     uint32_t mn;
     uint32_t mx;
 
-    if (b->hist_count == 0U) {
-        return 0U;
-    }
+    if (b->hist_count == 0U) { return 0U; }
 
     mn = b->history[0U];
     mx = b->history[0U];
@@ -37,12 +55,12 @@ static uint32_t compute_threshold(const BpmDetector *b)
         if (b->history[i] > mx) { mx = b->history[i]; }
     }
 
-    /* Midpoint: min + (max - min) / 2 — integer division, no overflow risk
-       since both are uint32_t PPG counts well below UINT32_MAX/2 */
+    if ((mx - mn) < PPG_MIN_AMPLITUDE) { return 0U; }
+
     return mn + ((mx - mn) / 2U);
 }
 
-void bpm_update(BpmDetector *b, uint32_t ir_filt)
+void bpm_update(BpmDetector *b, uint32_t ir_filt, uint32_t tick)
 {
     uint32_t threshold;
 
@@ -60,20 +78,34 @@ void bpm_update(BpmDetector *b, uint32_t ir_filt)
 
     threshold = compute_threshold(b);
 
-    /* Rising-edge threshold crossing: previous sample below, current at or above */
-    if ((b->prev_val < threshold) && (ir_filt >= threshold)) {
-        uint32_t now = (uint32_t)xTaskGetTickCount();
+    /* threshold == 0: signal amplitude too small — skip crossing detection */
+    if (threshold == 0U) { b->prev_val = ir_filt; return; }
 
-        if (b->cross_count == 0U) {
-            b->last_cross_ticks = now;
-            b->cross_count      = 1U;
-        } else {
-            uint32_t elapsed = now - b->last_cross_ticks; /* unsigned subtraction handles tick rollover */
-            if (elapsed >= pdMS_TO_TICKS(BPM_REFRACTORY_MS)) {
-                b->interval_ticks   = elapsed;
-                b->last_cross_ticks = now;
-                if (b->cross_count < 255U) {
-                    b->cross_count++;
+    /* Schmitt trigger: lower band = threshold - hyst, upper band = threshold + hyst.
+       Signal must fall below lower band before rising-edge at upper band counts.
+       This blocks noise-induced double-crossings without limiting physiological range. */
+    {
+        uint32_t lower = (threshold > PPG_HYSTERESIS) ? (threshold - PPG_HYSTERESIS) : 0U;
+        uint32_t upper = threshold + PPG_HYSTERESIS;
+
+        if (ir_filt <= lower) {
+            b->below_lower = 1U;
+        }
+
+        if (b->below_lower && (ir_filt >= upper)) {
+            b->below_lower = 0U;
+
+            if (b->cross_count == 0U) {
+                b->last_cross_ticks = tick;
+                b->cross_count      = 1U;
+            } else {
+                uint32_t elapsed = tick - b->last_cross_ticks;
+                if (elapsed >= pdMS_TO_TICKS(BPM_REFRACTORY_MS)) {
+                    b->interval_ticks   = elapsed;
+                    b->last_cross_ticks = tick;
+                    if (b->cross_count < 255U) {
+                        b->cross_count++;
+                    }
                 }
             }
         }
@@ -90,9 +122,12 @@ uint32_t bpm_get(const BpmDetector *b)
     if (b->cross_count < 2U) { return BPM_INVALID; }
     if (b->interval_ticks == 0U) { return BPM_INVALID; }
 
-    /* interval_ticks stores ticks; convert to ms using portTICK_PERIOD_MS */
+    /* Stale check: no crossing for longer than one BPM_MIN interval */
+    if (((uint32_t)xTaskGetTickCount() - b->last_cross_ticks) > pdMS_TO_TICKS(60000U / BPM_MIN)) {
+        return BPM_INVALID;
+    }
+
     interval_ms = b->interval_ticks * (uint32_t)portTICK_PERIOD_MS;
-    if (interval_ms == 0U) { return BPM_INVALID; }
 
     bpm = 60000U / interval_ms;
     if ((bpm < BPM_MIN) || (bpm > BPM_MAX)) { return BPM_INVALID; }

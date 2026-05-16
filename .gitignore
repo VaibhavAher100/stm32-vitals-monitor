@@ -47,3 +47,12 @@ CONTRIBUTING.md
 
 # Workflow artifacts
 docs/superpowers/
+.firecrawl/
+
+# cppcheck analysis artifacts
+*.dump
+*.ctu-info
+__pycache__/
+misra.py
+cppcheckdata.py
+misra_9.py

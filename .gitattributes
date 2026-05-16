@@ -1,2 +1,7 @@
 docs/* linguist-documentation=true
 index.html linguist-documentation=true
+*.c text eol=lf
+*.h text eol=lf
+*.md text eol=lf
+Makefile text eol=lf
+*.sh text eol=lf

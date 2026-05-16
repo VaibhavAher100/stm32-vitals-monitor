@@ -31,7 +31,7 @@ Phase 4 added FreeRTOS: `main.c` now owns scheduler startup and task creation. M
 │           filter.c / filter.h                       │
 │           bpm.c / bpm.h                             │
 │                                                     │
-│  Moving average filter (circular buffer, 8 samples) │
+│  Moving average filter (circular buffer, 4 samples) │
 │  BPM detector (dynamic threshold, rising-edge)      │
 │  No register access. No UART calls.                 │
 │  Note: bpm.c uses xTaskGetTickCount() for timing.   │
@@ -62,7 +62,7 @@ Three rules: application never touches registers. Driver never calls application
 firmware/Core/Src/
 ├── main.c           Application - RTOS init, queue create, task spawn
 ├── tasks_vitals.c   Application - task_sensor and task_uart implementations
-├── filter.c         Processing  - 8-sample circular buffer moving average
+├── filter.c         Processing  - 4-sample circular buffer moving average
 ├── bpm.c            Processing  - dynamic threshold BPM detection
 ├── uart.c           Driver      - USART2 register-level init and transmit
 ├── i2c.c            Driver      - I2C1 register-level init, read, write

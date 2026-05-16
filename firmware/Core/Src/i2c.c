@@ -75,6 +75,7 @@ uint8_t i2c_write_reg(uint8_t addr, uint8_t reg, uint8_t val)
 
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_STOPF) && (timeout > 0U)) { timeout--; }
+    if (timeout == 0U) { return i2c_clear_err(); }
     vTaskDelay(pdMS_TO_TICKS(1U));
     return 1U;
 }

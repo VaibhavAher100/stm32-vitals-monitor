@@ -7,8 +7,8 @@
 
 typedef struct {
     int32_t  temp_x10;  /* Celsius × 10, e.g. 229 = 22.9 °C */
-    uint32_t ir_raw;
-    uint32_t ir_filt;
+    uint32_t red_raw;
+    uint32_t red_filt;
     uint32_t bpm;
 } VitalsMsg;
 

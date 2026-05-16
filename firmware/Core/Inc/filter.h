@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define FILTER_WINDOW 8
+#define FILTER_WINDOW 4
 
 typedef struct {
     uint32_t buf[FILTER_WINDOW];

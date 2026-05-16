@@ -11,12 +11,12 @@ has been verified. Planned items are in Section 5 marked `[FUTURE]`.
 ## 1. Scope
 
 Bare-metal firmware on an STM32L476RG (Cortex-M4, 4 MHz MSI clock). Reads
-temperature from a TMP117 sensor and raw infrared (IR) data from a MAX30102
-sensor over I2C. Applies a moving average filter to the IR data. Detects
-heart rate (BPM) from filtered PPG signal. Runs two FreeRTOS tasks communicating
-via a queue. IWDG watchdog provides automatic reset on task hang. Transmits
-results over UART every 500 ms. All peripheral configuration is register-level
-via CMSIS device headers - no HAL, no CubeMX.
+temperature from a TMP117 sensor and red PPG data from a MAX30102 sensor over
+I2C. Applies a moving average filter to the AC PPG signal before BPM detection.
+Runs two FreeRTOS tasks communicating via a queue. IWDG watchdog provides
+automatic reset on startup/scheduler/task hangs. Transmits results over UART
+every 500 ms. All peripheral configuration is register-level via CMSIS device
+headers - no HAL, no CubeMX.
 
 **Hardware:** STM32 Nucleo-L476RG - TMP117 breakout (I2C 0x49) - MAX30102
 breakout (I2C 0x57) - shared I2C1 bus on PB8/PB9.
@@ -33,7 +33,7 @@ breakout (I2C 0x57) - shared I2C1 bus on PB8/PB9.
 | REQ-SYS-02 | The firmware shall initialise I2C before any sensor communication attempt. |
 | REQ-SYS-03 | Sensor initialisation (TMP117, MAX30102) shall run inside task_sensor after the scheduler starts, so vTaskDelay is available during init. |
 | REQ-SYS-04 | The firmware shall report the result of each sensor initialisation over UART (`OK` or `FAIL`) before entering the measurement loop. |
-| REQ-SYS-05 | The firmware shall enter the measurement loop regardless of sensor initialisation result. A failed sensor shall not halt the system. |
+| REQ-SYS-05 | If either sensor fails initialisation, the firmware shall stop before the measurement loop and allow the already-started IWDG to reset the MCU. |
 
 ### 2.2 UART
 
@@ -53,7 +53,7 @@ breakout (I2C 0x57) - shared I2C1 bus on PB8/PB9.
 | REQ-I2C-02 | PB8 and PB9 shall be configured as alternate function AF4, open-drain output type, very high speed. Open-drain is mandatory for I2C shared-bus operation. |
 | REQ-I2C-03 | I2C1 shall operate in standard mode at 100 kHz. The timing register (TIMINGR) shall be set to `0x00100D14`, valid for a 4 MHz system clock. |
 | REQ-I2C-04 | TIMINGR shall be written only while the I2C peripheral is disabled (CR1 PE bit = 0). |
-| REQ-I2C-05 | The firmware shall provide three I2C transfer functions: single-byte register write, single-byte register read, two-byte register read. |
+| REQ-I2C-05 | The firmware shall provide four I2C transfer functions: single-byte register write, single-byte register read, two-byte register read, and three-byte register read. |
 | REQ-I2C-06 | All I2C polling loops shall use a timeout counter of 50000 cycles. A loop that times out shall exit without hanging. |
 | REQ-I2C-07 | All I2C sticky status flags shall be cleared by writing `0x3F38` to ICR before each transaction. |
 
@@ -64,30 +64,30 @@ breakout (I2C 0x57) - shared I2C1 bus on PB8/PB9.
 | REQ-TMP-01 | On initialisation, the firmware shall read the TMP117 device ID register (0x0F) and compare it against the expected value `0x0117`. |
 | REQ-TMP-02 | `tmp117_init()` shall return 1 if the device ID matches, 0 otherwise. |
 | REQ-TMP-03 | The firmware shall read temperature by reading the TMP117 TEMP register (0x00) as a raw 16-bit signed value. |
-| REQ-TMP-04 | Raw temperature shall be converted to Celsius x 10 using the approximation `(raw * 78) / 1000`, which implements the 0.0078125 C/LSB conversion factor from the TMP117 datasheet. |
+| REQ-TMP-04 | Raw temperature shall be converted to Celsius x 10 using `(raw * 625) / 8000`, which implements the 0.0078125 C/LSB conversion factor from the TMP117 datasheet. |
 | REQ-TMP-05 | Temperature shall be formatted for output as integer degrees and one decimal digit separated by `.` (e.g., `23.4`). |
 
-### 2.5 MAX30102 IR Sensor
+### 2.5 MAX30102 PPG Sensor
 
 | ID | Requirement |
 |---|---|
 | REQ-MAX-01 | On initialisation, the firmware shall read the MAX30102 Part ID register (0xFF) and compare it against the expected value `0x15`. |
 | REQ-MAX-02 | `max30102_init()` shall return 1 if the Part ID matches, 0 otherwise. |
 | REQ-MAX-03 | The firmware shall reset the MAX30102 by writing `0x40` to the MODE register (0x09) and waiting before applying further configuration. |
-| REQ-MAX-04 | The firmware shall configure the MAX30102 FIFO with 4-sample averaging and rollover enabled: FIFO_CONFIG (0x08) = `0x4F`. |
-| REQ-MAX-05 | The firmware shall configure MAX30102 in heart rate mode (IR LED only): MODE (0x09) = `0x02`. |
+| REQ-MAX-04 | The firmware shall configure the MAX30102 FIFO with 4-sample averaging, rollover enabled, and almost-full threshold 15: FIFO_CONFIG (0x08) = `0x5F`. |
+| REQ-MAX-05 | The firmware shall configure MAX30102 in heart rate mode (red LED only): MODE (0x09) = `0x02`. |
 | REQ-MAX-06 | The firmware shall configure MAX30102 at 100 samples/second with 411 us pulse width: SpO2 config (0x0A) = `0x27`. |
-| REQ-MAX-07 | The IR LED current shall be set to 6.4 mA: LED1_PA (0x0C) = `0x1F`. |
-| REQ-MAX-08 | The FIFO write pointer (0x04) and read pointer (0x06) shall be reset to 0 after configuration. |
+| REQ-MAX-07 | The red LED current shall be set to 3.2 mA: LED1_PA (0x0C) = `0x10`. |
+| REQ-MAX-08 | The FIFO write pointer (0x04), overflow counter (0x05), and read pointer (0x06) shall be reset to 0 after configuration. |
 | REQ-MAX-09 | On each measurement cycle, the firmware shall read 3 bytes from the FIFO data register (0x07) and reconstruct a 32-bit value (MSB first: byte0 << 16 | byte1 << 8 | byte2). |
-| REQ-MAX-10 | Raw IR values shall be masked to 18-bit resolution: `result & 0x3FFFF`, per the MAX30102 datasheet. |
+| REQ-MAX-10 | Raw PPG values shall be masked to 18-bit resolution: `result & 0x3FFFF`, per the MAX30102 datasheet. |
 
 ### 2.6 Moving Average Filter
 
 | ID | Requirement |
 |---|---|
-| REQ-FIL-01 | The firmware shall apply a moving average filter to raw IR values before BPM detection and output. |
-| REQ-FIL-02 | The filter window shall be 8 samples (`FILTER_WINDOW = 8` in filter.h). |
+| REQ-FIL-01 | The firmware shall apply a moving average filter to the centered AC PPG signal before BPM detection. |
+| REQ-FIL-02 | The filter window shall be 4 samples (`FILTER_WINDOW = 4` in filter.h). |
 | REQ-FIL-03 | The filter shall use a circular buffer with a running sum, updating in O(1) per sample - no full recomputation of the sum on each call. |
 | REQ-FIL-04 | On each update, the value being replaced shall be subtracted from the running sum before the new value is added. |
 | REQ-FIL-05 | The returned average shall divide the running sum by the number of valid samples collected so far, not by `FILTER_WINDOW`, until the buffer is full. |
@@ -97,9 +97,9 @@ breakout (I2C 0x57) - shared I2C1 bus on PB8/PB9.
 
 | ID | Requirement |
 |---|---|
-| REQ-BPM-01 | BPM detection shall operate on filtered IR values from filter.c, not raw IR. |
-| REQ-BPM-02 | The dynamic threshold shall be computed as the midpoint of a rolling min/max window over the last BPM_HISTORY (8) filtered samples. |
-| REQ-BPM-03 | A valid beat shall be a rising-edge threshold crossing: previous filtered sample below threshold AND current sample at or above threshold. |
+| REQ-BPM-01 | BPM detection shall operate on filtered AC PPG values from filter.c, not raw sensor values. |
+| REQ-BPM-02 | The dynamic threshold shall be computed as the midpoint of a rolling min/max window over the last BPM_HISTORY (25) filtered samples. |
+| REQ-BPM-03 | A valid beat shall be a Schmitt-trigger rising-edge crossing: signal must first fall below the lower band and then rise above the upper band. |
 | REQ-BPM-04 | Consecutive crossings within BPM_REFRACTORY_MS (333 ms) shall be rejected. |
 | REQ-BPM-05 | BPM shall be computed as 60000 / interval_ms from the most recent valid crossing pair. `bpm_get()` shall return BPM_INVALID until at least two valid crossings are recorded. |
 
@@ -108,7 +108,7 @@ breakout (I2C 0x57) - shared I2C1 bus on PB8/PB9.
 | ID | Requirement |
 |---|---|
 | REQ-RTOS-01 | The firmware shall use FreeRTOS V10.5.1 to implement a two-task architecture. |
-| REQ-RTOS-02 | task_sensor (priority 2) shall read TMP117 and MAX30102, apply the IR filter, detect BPM, kick the IWDG, and post a VitalsMsg to vitals_queue every 500 ms using `vTaskDelay(pdMS_TO_TICKS(500U))`. |
+| REQ-RTOS-02 | task_sensor (priority 2) shall read TMP117 and MAX30102, apply PPG processing, detect BPM, kick the IWDG, and post a VitalsMsg to vitals_queue every 500 ms using `vTaskDelay(pdMS_TO_TICKS(500U))`. |
 | REQ-RTOS-03 | task_uart (priority 1) shall block on vitals_queue with `portMAX_DELAY` and format + transmit one UART output row per received VitalsMsg. |
 | REQ-RTOS-04 | Inter-task data shall pass exclusively through vitals_queue (depth 1, xQueueOverwrite). No shared globals shall carry measurement data between tasks. |
 | REQ-RTOS-05 | vitals_queue creation, IWDG init, UART init, and I2C init shall complete before `vTaskStartScheduler()`. Sensor init runs inside task_sensor after the scheduler starts. |
@@ -118,13 +118,13 @@ breakout (I2C 0x57) - shared I2C1 bus on PB8/PB9.
 | ID | Requirement |
 |---|---|
 | REQ-WDG-01 | The IWDG shall be configured with LSI at approximately 32 kHz, prescaler /32, reload 4000, giving a 4-second timeout. LSI must be confirmed ready (RCC_CSR_LSIRDY) before proceeding. |
-| REQ-WDG-02 | task_sensor shall call `iwdg_kick()` after each successful measurement cycle. A hang in task_sensor longer than 4 seconds shall trigger an automatic MCU reset. |
+| REQ-WDG-02 | task_sensor shall call `iwdg_kick()` once per measurement loop iteration. Startup failures and task hangs longer than 4 seconds shall trigger an automatic MCU reset. |
 
 ### 2.10 Measurement Output
 
 | ID | Requirement |
 |---|---|
-| REQ-OUT-01 | Each measurement cycle shall output one row containing four fields: temperature (C), raw IR value, filtered IR value, BPM. |
+| REQ-OUT-01 | Each measurement cycle shall output one row containing four fields: temperature (C), raw PPG value, DC/contact-quality estimate, BPM. |
 | REQ-OUT-02 | Output columns shall be separated by ` \| ` delimiters, consistent with the header row transmitted at startup. |
 | REQ-OUT-03 | Each output row shall be terminated with `\r\n`. |
 | REQ-OUT-04 | When BPM has not yet reached a valid reading (fewer than two crossings), the BPM field shall output `---`. |
@@ -193,7 +193,7 @@ Items explicitly outside the scope of the current firmware. Not unmet requiremen
 | Clinical heart rate validation | Out of scope | BPM output not tested against certified reference; not for medical use |
 | STOP2 low-power sleep modes | `[FUTURE]` | Planned extension phase |
 | BLE wireless streaming | `[FUTURE]` | Planned via ESP32 co-processor |
-| I2C bus recovery (9-clock unstick) | `[FUTURE]` | Current recovery: IWDG reset after 4 s |
+| I2C bus recovery (9-clock unstick) | `[FUTURE]` | Current handling: bounded I2C timeouts; no bus unstick sequence |
 | Unity unit tests for filter.c / bpm.c | Done | `tests/` - 15 automated tests, host-runnable |
 | Non-volatile storage | Out of scope | No SD card or EEPROM on current hardware |
 | Wall-clock timestamps on readings | Out of scope | Would require RTC peripheral |

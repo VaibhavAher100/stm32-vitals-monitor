@@ -39,29 +39,41 @@ void test_filter_partial_fill_three_values(void)
     TEST_ASSERT_EQUAL_UINT32(200U, result);
 }
 
-/* REQ-FIL-02, REQ-FIL-03: full window averages all 8 */
+/* REQ-FIL-02, REQ-FIL-03: full window averages all FILTER_WINDOW samples */
 void test_filter_full_window_averages_all_eight(void)
 {
-    /* [100,200,300,400,500,600,700,800], sum=3600, average=450 */
+    /* Feed [100, 200, ..., FILTER_WINDOW*100].
+       Sum = 100 * FILTER_WINDOW * (FILTER_WINDOW+1) / 2.
+       Rounded avg = (sum + FILTER_WINDOW/2) / FILTER_WINDOW
+                   = 100 * (FILTER_WINDOW+1) / 2  when sum is divisible. */
     uint32_t i;
     uint32_t result = 0U;
-    for (i = 1U; i <= 8U; i++) {
+    for (i = 1U; i <= (uint32_t)FILTER_WINDOW; i++) {
         result = filter_update(&f, i * 100U);
     }
-    TEST_ASSERT_EQUAL_UINT32(450U, result);
+    uint32_t sum      = 100U * (uint32_t)FILTER_WINDOW * (uint32_t)(FILTER_WINDOW + 1U) / 2U;
+    uint32_t count    = (uint32_t)FILTER_WINDOW;
+    uint32_t expected = (sum + count / 2U) / count;
+    TEST_ASSERT_EQUAL_UINT32(expected, result);
 }
 
-/* REQ-FIL-04: 9th sample drops the oldest, not all 9 */
+/* REQ-FIL-04: (FILTER_WINDOW+1)th sample drops the oldest */
 void test_filter_rollover_drops_oldest(void)
 {
     uint32_t i;
-    /* Fill with 100..800 */
-    for (i = 1U; i <= 8U; i++) {
+    /* Fill with [100, 200, ..., FILTER_WINDOW*100] */
+    for (i = 1U; i <= (uint32_t)FILTER_WINDOW; i++) {
         filter_update(&f, i * 100U);
     }
-    /* 9th sample: replace 100 with 900 -> [200..800,900], sum=4400, avg=550 */
-    uint32_t result = filter_update(&f, 900U);
-    TEST_ASSERT_EQUAL_UINT32(550U, result);
+    /* Next sample replaces 100 with (FILTER_WINDOW+1)*100.
+       New window: [200, 300, ..., (FILTER_WINDOW+1)*100].
+       Sum = 100 * (2 + 3 + ... + (FILTER_WINDOW+1))
+           = 100 * ((FILTER_WINDOW+1)*(FILTER_WINDOW+2)/2 - 1). */
+    uint32_t result = filter_update(&f, (uint32_t)(FILTER_WINDOW + 1U) * 100U);
+    uint32_t sum     = 100U * ((uint32_t)(FILTER_WINDOW + 1U) * (uint32_t)(FILTER_WINDOW + 2U) / 2U - 1U);
+    uint32_t count   = (uint32_t)FILTER_WINDOW;
+    uint32_t expected = (sum + count / 2U) / count;
+    TEST_ASSERT_EQUAL_UINT32(expected, result);
 }
 
 /* REQ-FIL-03: eight identical values returns that value exactly */

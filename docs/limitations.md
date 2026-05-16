@@ -18,23 +18,31 @@ caused by pulsatile blood flow. Converting raw PPG data to a calibrated SpO2 per
 - Regulatory approval (FDA clearance or CE marking) for medical use
 - Controlled placement on the body (fingertip, earlobe, or wrist)
 
-None of these are implemented here. The IR raw values printed by this firmware indicate
+None of these are implemented here. The raw PPG values printed by this firmware indicate
 relative changes in light absorption, not an absolute SpO2 percentage.
 
 **Do not use the output of this firmware for any medical decision.**
 
 ### BPM Not Clinically Validated
 
-Phase 3 adds a dynamic-threshold rising-edge BPM detector operating on the filtered IR PPG signal.
-The algorithm reports beats per minute once two valid threshold crossings are recorded,
-with a 333 ms refractory period to suppress noise.
+The BPM detector uses a Schmitt trigger on the IIR-DC-removed, moving-average-filtered AC PPG signal.
+A 600 ms refractory period suppresses dicrotic notch double-detection.
+BPM is reported once two valid threshold crossings are recorded with a consensus filter
+requiring two consecutive readings within ±2 BPM.
+
+Hardware-verified (May 2026, Nucleo-L476RG, MAX30102 at 12.6 mA):
+- DC estimator requires ~20 seconds to converge after finger placement before BPM appears.
+- BPM reads in the 64-97 BPM range for a resting adult (physiologically plausible).
+- Readings vary ±15 BPM due to finger position sensitivity and Schmitt trigger noise.
+- Algorithm cannot detect rates above 100 BPM (limited by 600 ms refractory period).
 
 This is not a clinically validated heart rate measurement. Known gaps:
 
 - No motion artefact rejection - movement corrupts the PPG waveform
 - No stabilisation window before reporting (first valid pair triggers output)
-- Threshold derived from a rolling 8-sample min/max window, not an absolute calibrated reference
-- Not tested against a reference pulse oximeter
+- Threshold derived from a rolling 25-sample min/max window, not an absolute calibrated reference
+- Not validated against a reference pulse oximeter
+- Schmitt trigger approach is unsuitable for clinical use without adaptive filtering
 
 **Do not use the BPM output of this firmware for any medical decision.**
 
@@ -69,7 +77,9 @@ Both sensors share I2C1. If one sensor holds the SDA line LOW (a known failure m
 the entire I2C bus is blocked and neither sensor can communicate.
 
 No bus recovery procedure (9 clock pulses to unstick SDA) is implemented.
-Recovery requires a power cycle.
+The current I2C driver uses bounded polling timeouts, so many runtime I2C
+failures return an error-like zero value instead of blocking long enough for
+the watchdog to fire. A hard SDA-low fault can still require a power cycle.
 
 ---
 
@@ -77,18 +87,18 @@ Recovery requires a power cycle.
 
 ### No Input Validation
 
-The firmware does not validate sensor register values before using them.
-An invalid device ID from TMP117 or MAX30102 will be printed but processing will continue
-as if the value were valid. In a production system, invalid readings would trigger an error
-handler and halt measurement.
+The firmware validates TMP117 and MAX30102 device IDs at startup. If either
+sensor fails initialisation, the firmware stops before the measurement loop and
+allows the IWDG to reset the MCU. Runtime sensor read failures are less
+explicit: I2C read helpers return zero, which can be indistinguishable from a
+valid zero-valued register unless the caller adds a separate health flag.
 
-### Integer Temperature Resolution
+### Temperature Display Resolution
 
-Temperature is printed as an integer in degrees Celsius.
+Temperature is printed with one decimal place in degrees Celsius.
 The TMP117 has 0.0078°C resolution (16-bit), but this precision is truncated in the
-current firmware to reduce output complexity.
+UART output to keep the display simple.
 
-Full resolution display is planned when the signal processing layer is added.
 
 ### No Non-Volatile Storage
 
@@ -99,8 +109,8 @@ An SD card or external EEPROM would be needed for data logging.
 ### No Timestamp on Readings
 
 Each sensor reading is printed without a timestamp.
-Phase 2 added a calibrated SysTick 1 ms counter (get_tick()), but the timestamp
-is not yet included in the UART output line format.
+FreeRTOS owns SysTick at 1 kHz, but the timestamp is not included in the UART
+output line format.
 An RTC peripheral would be needed for wall-clock timestamps.
 
 ---

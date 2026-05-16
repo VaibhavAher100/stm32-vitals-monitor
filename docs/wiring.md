@@ -128,8 +128,8 @@ After wiring and flashing, the UART output should show:
 ```
 MAX30102 Part ID: 0x15
 MAX30102 detected correctly
-IR raw: 45231
-IR raw: 45187
+PPG raw: 45231
+PPG raw: 45187
 ```
 
 ---

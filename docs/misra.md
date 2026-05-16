@@ -1,32 +1,44 @@
 # MISRA C Analysis - STM32 Vitals Monitor
 
-> **MISRA addon status (May 2026):** Cppcheck 2.20.0 with misra.py was re-run on the
-> full current codebase (9 project source files including tasks_vitals.c, bpm.c, iwdg.c).
-> The MISRA addon requires a commercially-licensed rules text file not included here.
-> Standard cppcheck analysis (--enable=style,warning,performance,portability) on all 9
-> project source files: **zero findings**. Rule 11.4 deviations below are now obsolete -
-> the CMSIS refactor replaced all raw volatile pointer casts with CMSIS struct access.
-> Two variableScope findings in bpm.c (now/elapsed declared too broadly) were found and
-> fixed (commit on main, May 2026).
+> **MISRA analysis status (May 2026 - current codebase):**
+> Re-run performed on all 9 project source files (post-CMSIS refactor, post-BPM algorithm
+> rework) using Cppcheck 2.20.0 + misra.py addon via dump-file analysis.
+>
+> **Standard cppcheck analysis (`--enable=all`) on 9 project source files: zero errors,
+> zero warnings.** Four variableScope findings in tasks_vitals.c (dc, ac, ac_filt, i)
+> were found and fixed (variables moved to narrowest applicable scope, May 2026).
+>
+> **MISRA rule violations found in project source files:**
+> Rules 12.2, 13.3, 14.4, 15.5, 8.4 - same deviations as documented below.
+> All remain justified. No new violations introduced by the CMSIS refactor or
+> BPM algorithm changes.
+>
+> **Note on misra-config errors:** The dump-file approach resolves CMSIS include paths
+> only at the project header level. CMSIS peripheral register symbols (I2C1, USART2, etc.)
+> are unresolved in the dump, producing `misra-config` false-positive errors.
+> These are analysis tool artefacts, not code violations.
+>
+> Rule 11.4 deviations below are now **obsolete** - the CMSIS refactor replaced all raw
+> volatile pointer casts with CMSIS struct access.
 
 ## Tool
 
-Cppcheck 2.20.0 with misra.py addon.
-Run date: April 2026 (pre-CMSIS codebase).
+Cppcheck 2.20.0 with misra.py addon (dump-file method).
+Run dates: April 2026 (original, pre-CMSIS) and May 2026 (current codebase).
 Rules checked against: MISRA C:2012.
 Note: MISRA C:2025 is the current published standard (March 2025). Cppcheck's
 MISRA addon targets 2012 - this analysis reflects the rules that tooling supports.
 
-Command used for original analysis:
+Command used for May 2026 re-run:
 
 ```
-cppcheck --addon=misra.py --enable=style,warning,performance,portability
-         --std=c99 --platform=arm32-wchar_t2
-         --suppress=missingInclude --suppress=missingIncludeSystem
+# Step 1: generate dump files
+cppcheck --dump --std=c99 -DSTM32L476xx --suppress=missingInclude
          -I firmware/Core/Inc
-         firmware/Core/Src/main.c firmware/Core/Src/filter.c
-         firmware/Core/Src/uart.c firmware/Core/Src/i2c.c
-         firmware/Core/Src/tmp117.c firmware/Core/Src/max30102.c
+         firmware/Core/Src/{uart,i2c,tmp117,max30102,filter,bpm,iwdg,tasks_vitals,main}.c
+
+# Step 2: MISRA check
+python misra.py --no-summary firmware/Core/Src/*.c.dump
 ```
 
 Command for re-run on current CMSIS codebase (pending):

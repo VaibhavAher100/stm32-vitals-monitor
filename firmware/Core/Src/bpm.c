@@ -12,8 +12,8 @@ void bpm_init(BpmDetector *b)
     b->hist_idx      = 0U;
     b->hist_count    = 0U;
     b->prev_val      = 0U;
-    b->last_cross_ms = 0U;
-    b->interval_ms   = 0U;
+    b->last_cross_ticks = 0U;
+    b->interval_ticks   = 0U;
     b->cross_count   = 0U;
 }
 
@@ -65,13 +65,13 @@ void bpm_update(BpmDetector *b, uint32_t ir_filt)
         uint32_t now = (uint32_t)xTaskGetTickCount();
 
         if (b->cross_count == 0U) {
-            b->last_cross_ms = now;
-            b->cross_count   = 1U;
+            b->last_cross_ticks = now;
+            b->cross_count      = 1U;
         } else {
-            uint32_t elapsed = now - b->last_cross_ms; /* unsigned subtraction handles tick rollover */
+            uint32_t elapsed = now - b->last_cross_ticks; /* unsigned subtraction handles tick rollover */
             if (elapsed >= pdMS_TO_TICKS(BPM_REFRACTORY_MS)) {
-                b->interval_ms   = elapsed;
-                b->last_cross_ms = now;
+                b->interval_ticks   = elapsed;
+                b->last_cross_ticks = now;
                 if (b->cross_count < 255U) {
                     b->cross_count++;
                 }
@@ -88,13 +88,13 @@ uint32_t bpm_get(const BpmDetector *b)
     uint32_t interval_ms;
 
     if (b->cross_count < 2U) { return BPM_INVALID; }
-    if (b->interval_ms == 0U) { return BPM_INVALID; }
+    if (b->interval_ticks == 0U) { return BPM_INVALID; }
 
-    /* interval_ms stores ticks; convert to ms using portTICK_PERIOD_MS */
-    interval_ms = b->interval_ms * (uint32_t)portTICK_PERIOD_MS;
+    /* interval_ticks stores ticks; convert to ms using portTICK_PERIOD_MS */
+    interval_ms = b->interval_ticks * (uint32_t)portTICK_PERIOD_MS;
     if (interval_ms == 0U) { return BPM_INVALID; }
 
     bpm = 60000U / interval_ms;
-    if ((bpm < 30U) || (bpm > 200U)) { return BPM_INVALID; }
+    if ((bpm < BPM_MIN) || (bpm > BPM_MAX)) { return BPM_INVALID; }
     return bpm;
 }

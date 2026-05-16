@@ -9,8 +9,8 @@
 #define configCPU_CLOCK_HZ                      4000000UL
 #define configTICK_RATE_HZ                      1000U
 #define configMAX_PRIORITIES                    5U
-#define configMINIMAL_STACK_SIZE                128U
-#define configTOTAL_HEAP_SIZE                   4096U
+#define configMINIMAL_STACK_SIZE                256U
+#define configTOTAL_HEAP_SIZE                   16384U
 #define configMAX_TASK_NAME_LEN                 8U
 #define configUSE_TRACE_FACILITY                0
 #define configUSE_16_BIT_TICKS                  0

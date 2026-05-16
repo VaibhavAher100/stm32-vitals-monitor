@@ -22,5 +22,5 @@ uint32_t filter_update(Filter *f, uint32_t val)
     if (f->count < (uint8_t)FILTER_WINDOW) {
         f->count++;
     }
-    return f->sum / f->count;
+    return (f->sum + (uint32_t)(f->count / 2U)) / (uint32_t)f->count;
 }

@@ -16,6 +16,19 @@ static void i2c_busy_delay_ms(uint32_t ms)
     }
 }
 
+/* Clear all I2C error flags and return 0 — used on any bus error. */
+static uint8_t i2c_clear_err(void)
+{
+    I2C1->ICR = 0x3F38U;
+    return 0U;
+}
+
+/* Check for NACK/bus error/arbitration loss after a wait. Returns 1 if error. */
+static uint8_t i2c_has_err(void)
+{
+    return ((I2C1->ISR & (I2C_ISR_NACKF | I2C_ISR_BERR | I2C_ISR_ARLO)) != 0U) ? 1U : 0U;
+}
+
 void i2c_init(void)
 {
     RCC->AHB2ENR  |= RCC_AHB2ENR_GPIOBEN;
@@ -45,17 +58,19 @@ uint8_t i2c_write_reg(uint8_t addr, uint8_t reg, uint8_t val)
     while ((I2C1->ISR & I2C_ISR_BUSY) && (timeout > 0U)) { timeout--; }
     if (timeout == 0U) { return 0U; }
 
-    I2C1->CR2 = ((uint32_t)addr << 1U) | (2U << 16U) | I2C_CR2_AUTOEND;
-    I2C1->CR2 |= I2C_CR2_START;
+    /* Single write: set addr, nbytes, AUTOEND, and START atomically — RM0351 §37.4.5 */
+    I2C1->CR2 = ((uint32_t)addr << 1U) | (2U << 16U) | I2C_CR2_AUTOEND | I2C_CR2_START;
 
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_TXIS) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     I2C1->TXDR = reg;
 
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_TXIS) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     I2C1->TXDR = val;
 
     timeout = 50000U;
@@ -75,15 +90,16 @@ uint8_t i2c_read_reg(uint8_t addr, uint8_t reg)
     if (timeout == 0U) { return 0U; }
 
     /* Write phase: send register address */
-    I2C1->CR2 = ((uint32_t)addr << 1U) | (1U << 16U);
-    I2C1->CR2 |= I2C_CR2_START;
+    I2C1->CR2 = ((uint32_t)addr << 1U) | (1U << 16U) | I2C_CR2_START;
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_TXIS) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     I2C1->TXDR = reg;
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_TC) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     I2C1->CR2 |= I2C_CR2_STOP;
     vTaskDelay(pdMS_TO_TICKS(1U));
 
@@ -92,11 +108,11 @@ uint8_t i2c_read_reg(uint8_t addr, uint8_t reg)
     timeout = 50000U;
     while ((I2C1->ISR & I2C_ISR_BUSY) && (timeout > 0U)) { timeout--; }
     if (timeout == 0U) { return 0U; }
-    I2C1->CR2 = ((uint32_t)addr << 1U) | I2C_CR2_RD_WRN | (1U << 16U) | I2C_CR2_AUTOEND;
-    I2C1->CR2 |= I2C_CR2_START;
+    I2C1->CR2 = ((uint32_t)addr << 1U) | I2C_CR2_RD_WRN | (1U << 16U) | I2C_CR2_AUTOEND | I2C_CR2_START;
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_RXNE) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     val = (uint8_t)I2C1->RXDR;
     vTaskDelay(pdMS_TO_TICKS(1U));
     return val;
@@ -113,15 +129,16 @@ uint16_t i2c_read_2bytes(uint8_t addr, uint8_t reg)
     if (timeout == 0U) { return 0U; }
 
     /* Write phase: send register address */
-    I2C1->CR2 = ((uint32_t)addr << 1U) | (1U << 16U);
-    I2C1->CR2 |= I2C_CR2_START;
+    I2C1->CR2 = ((uint32_t)addr << 1U) | (1U << 16U) | I2C_CR2_START;
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_TXIS) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     I2C1->TXDR = reg;
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_TC) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     I2C1->CR2 |= I2C_CR2_STOP;
     vTaskDelay(pdMS_TO_TICKS(1U));
 
@@ -130,17 +147,18 @@ uint16_t i2c_read_2bytes(uint8_t addr, uint8_t reg)
     timeout = 50000U;
     while ((I2C1->ISR & I2C_ISR_BUSY) && (timeout > 0U)) { timeout--; }
     if (timeout == 0U) { return 0U; }
-    I2C1->CR2 = ((uint32_t)addr << 1U) | I2C_CR2_RD_WRN | (2U << 16U) | I2C_CR2_AUTOEND;
-    I2C1->CR2 |= I2C_CR2_START;
+    I2C1->CR2 = ((uint32_t)addr << 1U) | I2C_CR2_RD_WRN | (2U << 16U) | I2C_CR2_AUTOEND | I2C_CR2_START;
 
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_RXNE) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     result = (uint16_t)((uint16_t)(I2C1->RXDR & 0xFFU) << 8U);
 
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_RXNE) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     result |= (uint16_t)I2C1->RXDR;
     vTaskDelay(pdMS_TO_TICKS(1U));
     return result;
@@ -157,15 +175,16 @@ uint32_t i2c_read_3bytes(uint8_t addr, uint8_t reg)
     if (timeout == 0U) { return 0U; }
 
     /* Write phase: send register address */
-    I2C1->CR2 = ((uint32_t)addr << 1U) | (1U << 16U);
-    I2C1->CR2 |= I2C_CR2_START;
+    I2C1->CR2 = ((uint32_t)addr << 1U) | (1U << 16U) | I2C_CR2_START;
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_TXIS) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     I2C1->TXDR = reg;
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_TC) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     I2C1->CR2 |= I2C_CR2_STOP;
     vTaskDelay(pdMS_TO_TICKS(1U));
 
@@ -174,22 +193,24 @@ uint32_t i2c_read_3bytes(uint8_t addr, uint8_t reg)
     timeout = 50000U;
     while ((I2C1->ISR & I2C_ISR_BUSY) && (timeout > 0U)) { timeout--; }
     if (timeout == 0U) { return 0U; }
-    I2C1->CR2 = ((uint32_t)addr << 1U) | I2C_CR2_RD_WRN | (3U << 16U) | I2C_CR2_AUTOEND;
-    I2C1->CR2 |= I2C_CR2_START;
+    I2C1->CR2 = ((uint32_t)addr << 1U) | I2C_CR2_RD_WRN | (3U << 16U) | I2C_CR2_AUTOEND | I2C_CR2_START;
 
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_RXNE) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     result = ((uint32_t)I2C1->RXDR << 16U);
 
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_RXNE) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     result |= ((uint32_t)I2C1->RXDR << 8U);
 
     timeout = 50000U;
     while (!(I2C1->ISR & I2C_ISR_RXNE) && (timeout > 0U)) { timeout--; }
-    if (timeout == 0U) { return 0U; }
+    if (timeout == 0U) { return i2c_clear_err(); }
+    if (i2c_has_err()) { return i2c_clear_err(); }
     result |= (uint32_t)I2C1->RXDR;
     vTaskDelay(pdMS_TO_TICKS(1U));
     return result;

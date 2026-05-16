@@ -25,16 +25,16 @@ uint8_t max30102_init(void)
     uint8_t id = i2c_read_reg(MAX30102_ADDR, REG_PARTID);
     if (id != MAX30102_ID_EXPECTED) { return 0U; }
 
-    (void)i2c_write_reg(MAX30102_ADDR, REG_MODE,     0x40U); /* reset */
-    vTaskDelay(pdMS_TO_TICKS(150U));                          /* reset settle — scheduler running */
-    (void)i2c_write_reg(MAX30102_ADDR, REG_FIFO_CF,  0x4FU); /* 4 avg, rollover on */
-    (void)i2c_write_reg(MAX30102_ADDR, REG_MODE,     0x02U); /* HR mode */
-    (void)i2c_write_reg(MAX30102_ADDR, REG_SPO2,     0x27U); /* 100 sps, 411 us */
-    (void)i2c_write_reg(MAX30102_ADDR, REG_LED1,     0x1FU); /* 6.4 mA IR LED */
+    if (i2c_write_reg(MAX30102_ADDR, REG_MODE,     0x40U) == 0U) { return 0U; } /* reset */
+    vTaskDelay(pdMS_TO_TICKS(150U));                                              /* reset settle — scheduler running */
+    if (i2c_write_reg(MAX30102_ADDR, REG_FIFO_CF,  0x4FU) == 0U) { return 0U; } /* 4 avg, rollover on */
+    if (i2c_write_reg(MAX30102_ADDR, REG_MODE,     0x02U) == 0U) { return 0U; } /* HR mode */
+    if (i2c_write_reg(MAX30102_ADDR, REG_SPO2,     0x27U) == 0U) { return 0U; } /* 100 sps, 411 us */
+    if (i2c_write_reg(MAX30102_ADDR, REG_LED1,     0x1FU) == 0U) { return 0U; } /* 6.4 mA IR LED */
     /* Datasheet §6.3: flush FIFO by zeroing all three pointer registers */
-    (void)i2c_write_reg(MAX30102_ADDR, REG_FIFO_WR,  0x00U);
-    (void)i2c_write_reg(MAX30102_ADDR, REG_FIFO_OVF, 0x00U);
-    (void)i2c_write_reg(MAX30102_ADDR, REG_FIFO_RD,  0x00U);
+    if (i2c_write_reg(MAX30102_ADDR, REG_FIFO_WR,  0x00U) == 0U) { return 0U; }
+    if (i2c_write_reg(MAX30102_ADDR, REG_FIFO_OVF, 0x00U) == 0U) { return 0U; }
+    if (i2c_write_reg(MAX30102_ADDR, REG_FIFO_RD,  0x00U) == 0U) { return 0U; }
     return 1U;
 }
 

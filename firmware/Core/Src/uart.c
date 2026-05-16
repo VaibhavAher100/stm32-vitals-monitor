@@ -1,6 +1,7 @@
 /* Implements: REQ-UART-01, REQ-UART-02, REQ-UART-03, REQ-UART-04, REQ-UART-05 */
 #include "stm32l476xx.h"
 #include "uart.h"
+#include <stdint.h>
 
 void uart_init(void)
 {
@@ -34,8 +35,16 @@ void uart_int(int32_t v)
     char buf[12];
     uint8_t i = 0;
     int32_t val = v;
+    /* -INT32_MIN overflows on negation — handle explicitly */
+    if (val == INT32_MIN) { uart_str("-2147483648"); return; }
     if (val < 0) { uart_char('-'); val = -val; }
     if (val == 0) { uart_char('0'); return; }
     while (val > 0) { buf[i++] = '0' + (val % 10); val /= 10; }
     while (i > 0U) { uart_char(buf[--i]); }
+}
+
+int __io_putchar(int ch)
+{
+    uart_char((char)ch);
+    return ch;
 }

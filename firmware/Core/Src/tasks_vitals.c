@@ -126,8 +126,12 @@ void task_sensor(void *arg)
                     dc_est = dc_est - (dc_est >> DC_SHIFT) + raw;
                     dc = dc_est >> DC_SHIFT;
 
-                    /* AC component centered at AC_CENTER */
-                    ac = (raw >= dc) ? (raw - dc + AC_CENTER) : (AC_CENTER - (dc - raw));
+                    /* Signed delta prevents uint32_t wrap when raw drops far below dc */
+                    {
+                        int32_t delta = (int32_t)raw - (int32_t)dc;
+                        int32_t ac_s  = (int32_t)AC_CENTER + delta;
+                        ac = (ac_s > 0) ? (uint32_t)ac_s : 0U;
+                    }
 
                     ac_filt = filter_update(&ac_filter, ac);
                     bpm_update(&bpm, ac_filt, sample_tick);
@@ -183,7 +187,9 @@ void task_uart(void *arg)
     {
         (void)xQueueReceive(vitals_queue, &msg, portMAX_DELAY);
 
-        if (msg.temp_x10 < 0) {
+        if (msg.temp_x10 == INT32_MIN) {
+            uart_str("---");
+        } else if (msg.temp_x10 < 0) {
             uart_char('-');
             uart_int(-(msg.temp_x10 / 10));
             uart_char('.');

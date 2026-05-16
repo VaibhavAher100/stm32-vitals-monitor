@@ -61,8 +61,8 @@ Both sensors share I2C1 on PB8 (SCL) / PB9 (SDA) via breadboard rails.
 |--------|------------|--------|
 | 3.3V   | +3V3       | CN6 pin 4 |
 | GND    | GND        | CN6 pin 6 |
-| SCL    | PB8        | CN5 pin 10 |
-| SDA    | PB9        | CN5 pin 9 |
+| SCL    | PB8        | CN5 pin 1  |
+| SDA    | PB9        | CN5 pin 2  |
 
 ---
 

@@ -3,113 +3,91 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>STM32 Vitals Monitor - Vaibhav Aher</title>
+<title>STM32 Vitals Monitor · Vaibhav Aher</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+/* ── DESIGN TOKENS (OKLCH, light-primary) ── */
 :root {
-  --bg: #070a08;
-  --surface: #0d120f;
-  --border: #1a2e1e;
-  --phosphor: #33ff66;
-  --phosphor-dim: #1a8033;
-  --phosphor-faint: #0d4020;
-  --amber: #ffaa00;
-  --red: #ff3333;
-  --text: #b0d4bc;
-  --muted: #4a7a5a;
-  --mono: 'IBM Plex Mono', monospace;
-  --display: 'Syne', sans-serif;
+  /* Light surfaces */
+  --bg-0:       oklch(0.97 0.006 62);
+  --bg-1:       oklch(0.93 0.008 62);
+  --bg-2:       oklch(0.89 0.010 62);
+  /* Ink */
+  --ink-0:      oklch(0.22 0.010 62);
+  --ink-1:      oklch(0.44 0.012 62);
+  --ink-2:      oklch(0.60 0.008 62);
+  /* Rules & borders */
+  --rule-0:     oklch(0.84 0.014 62);
+  --rule-1:     oklch(0.76 0.016 62);
+  /* Signal: amber, primary accent */
+  --sig:        oklch(0.58 0.13 62);
+  --sig-bg:     oklch(0.93 0.030 62);
+  /* Terminal panel (dark inset) */
+  --t-bg:       oklch(0.16 0.008 62);
+  --t-surf:     oklch(0.21 0.010 62);
+  --t-rule:     oklch(0.30 0.012 62);
+  --t-ink:      oklch(0.90 0.005 62);
+  --t-muted:    oklch(0.58 0.008 62);
+  --t-sig:      oklch(0.78 0.14 72);
+  --t-cyan:     oklch(0.80 0.10 218);
+  --t-green:    oklch(0.80 0.11 148);
+  /* Bug warn */
+  --warn:       oklch(0.50 0.14 32);
+  --warn-bg:    oklch(0.94 0.016 32);
+  --warn-rule:  oklch(0.82 0.020 32);
+  /* Peripheral tag colours */
+  --pt-rcc:     oklch(0.52 0.12 62);
+  --pt-gpio:    oklch(0.48 0.10 220);
+  --pt-usr:     oklch(0.52 0.10 300);
+  --pt-i2c:     oklch(0.48 0.10 170);
+  --pt-iwd:     oklch(0.52 0.14 32);
+  /* Verified / OK */
+  --ok:         oklch(0.48 0.11 148);
+  --ok-bg:      oklch(0.93 0.020 148);
+  /* Type */
+  --font-sans:  "Inter", system-ui, sans-serif;
+  --font-tight: "Inter Tight", "Inter", system-ui, sans-serif;
+  --font-mono:  "JetBrains Mono", ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: light) {
+/* ── DARK MODE (system-preference) ── */
+@media (prefers-color-scheme: dark) {
   :root {
-    --bg: #f0f4f1;
-    --surface: #e2ece4;
-    --border: #a8c8b4;
-    --phosphor: #0a6028;
-    --phosphor-dim: #1a7838;
-    --phosphor-faint: #c0e0cc;
-    --amber: #8a5c00;
-    --red: #b81818;
-    --text: #1a2e1e;
-    --muted: #4a7058;
+    --bg-0:      oklch(0.16 0.008 62);
+    --bg-1:      oklch(0.20 0.010 62);
+    --bg-2:      oklch(0.24 0.012 62);
+    --ink-0:     oklch(0.94 0.005 62);
+    --ink-1:     oklch(0.72 0.008 62);
+    --ink-2:     oklch(0.54 0.008 62);
+    --rule-0:    oklch(0.30 0.012 62);
+    --rule-1:    oklch(0.38 0.014 62);
+    --sig:       oklch(0.72 0.14 72);
+    --sig-bg:    oklch(0.26 0.030 62);
+    --t-bg:      oklch(0.12 0.008 62);
+    --t-surf:    oklch(0.18 0.010 62);
+    --warn-bg:   oklch(0.22 0.018 32);
+    --warn-rule: oklch(0.34 0.022 32);
+    --ok-bg:     oklch(0.22 0.018 148);
+    --pt-rcc:    oklch(0.72 0.14 72);
+    --pt-gpio:   oklch(0.72 0.10 220);
+    --pt-usr:    oklch(0.72 0.10 300);
+    --pt-i2c:    oklch(0.72 0.10 170);
+    --pt-iwd:    oklch(0.72 0.14 32);
+    --ok:        oklch(0.72 0.11 148);
   }
-  body { cursor: default; }
-  body::before { display: none; }
-  body::after { display: none; }
-  .grid-bg { display: none; }
-  nav { background: rgba(240,244,241,0.95) !important; }
-  h1 { color: #0a1a0e !important; }
-  h1 .accent { text-shadow: none !important; }
-  h2 { color: #0a1a0e !important; }
-  .status-dot::before { box-shadow: none !important; }
-  .btn-p { color: #f0f4f1 !important; box-shadow: none !important; }
-  .btn-p:hover { box-shadow: none !important; }
-  .terminal { background: #e2ece4 !important; }
-  .term-header { background: #a8c8b4 !important; color: #1a2e1e !important; }
-  .t-c { color: #1a2e1e !important; }
-  .t-o { color: #2a4830 !important; }
-  .warn-box { background: rgba(138,92,0,0.06) !important; }
-  .reg-table th { background: #e2ece4 !important; }
-  .reg-table tr:hover td { background: rgba(10,96,40,0.04) !important; }
-  .arch-label.app { background: rgba(10,96,40,0.06) !important; }
-  .arch-label.proc { background: rgba(138,92,0,0.06) !important; }
-  .arch-label.drv { background: rgba(40,80,200,0.06) !important; }
-  .footer-bar { background: #f0f4f1 !important; }
-  .section-marker::before { box-shadow: none !important; }
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-html { scroll-behavior: smooth; }
-
+/* ── RESET ── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 14px;
+  background: var(--bg-0);
+  color: var(--ink-0);
+  font-family: var(--font-sans);
+  font-size: 16px;
   line-height: 1.6;
-  cursor: crosshair;
-}
-
-/* phosphor glow effect */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(51,255,102,0.03) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* scanlines */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 3px,
-    rgba(0,0,0,0.08) 3px,
-    rgba(0,0,0,0.08) 4px
-  );
-  pointer-events: none;
-  z-index: 999;
-}
-
-/* ── GRID OVERLAY ── */
-.grid-bg {
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(51,255,102,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(51,255,102,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ── NAV ── */
@@ -117,41 +95,36 @@ nav {
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 100;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  padding: 16px 40px;
-  background: rgba(7,10,8,0.9);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--border);
-}
-
-.nav-id {
-  grid-column: 2;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--phosphor);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-.nav-links {
-  grid-column: 3;
-  justify-self: end;
   display: flex;
-  gap: 32px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 48px;
+  background: oklch(0.97 0.006 62 / 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule-0);
 }
-
+@media (prefers-color-scheme: dark) {
+  nav { background: oklch(0.16 0.008 62 / 0.92); }
+}
+.nav-brand {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sig);
+}
+.nav-links { display:flex; gap:32px; list-style:none; }
 .nav-links a {
-  font-size: 11px;
-  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-2);
   text-decoration: none;
-  letter-spacing: 0.08em;
-  transition: color 0.2s;
+  letter-spacing: 0.01em;
+  transition: color 0.15s;
 }
-
-.nav-links a:hover { color: var(--phosphor); }
+.nav-links a:hover { color: var(--ink-0); }
 
 /* ── HERO ── */
 .hero {
@@ -159,757 +132,1269 @@ nav {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 120px 40px 64px;
   position: relative;
-  z-index: 1;
-  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  border-bottom: 1px solid var(--rule-0);
 }
 
-.status-bar {
-  display: flex;
-  gap: 24px;
-  margin-bottom: 48px;
-  font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 0.1em;
-  flex-wrap: wrap;
-}
-
-.status-dot {
+.waveform-wrap {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  overflow: hidden;
+  pointer-events: none;
 }
+.waveform-svg {
+  width: 200%;
+  min-width: 1600px;
+  height: 280px;
+  flex-shrink: 0;
+  animation: wave-scroll 10s linear infinite;
+}
+@keyframes wave-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ppg-line  { fill:none; stroke:var(--sig); stroke-width:1.5; opacity:0.12; }
+.ppg-glow  { fill:none; stroke:var(--sig); stroke-width:6;   opacity:0.04; filter:blur(4px); }
 
-.status-dot::before {
+/* Radial warm wash */
+.hero::before {
   content: '';
-  width: 6px;
-  height: 6px;
+  position: absolute;
+  top: 20%; left: 20%;
+  width: 800px; height: 500px;
+  background: radial-gradient(ellipse, oklch(0.78 0.06 62 / 0.12) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 48px 72px;
+  max-width: 920px;
+}
+
+.hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.blink-dot {
+  width: 7px; height: 7px;
   border-radius: 50%;
-  background: var(--phosphor);
-  box-shadow: 0 0 6px var(--phosphor);
-  animation: blink 1.4s ease-in-out infinite;
+  background: var(--sig);
+  animation: blink 2s ease-in-out infinite;
 }
-
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,100% { opacity:1; }
+  50%      { opacity:0.35; }
 }
-
-.status-dot.warn::before { background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: none; }
+.eyebrow-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
 
 h1 {
-  font-family: var(--display);
-  font-size: clamp(48px, 8vw, 96px);
-  font-weight: 800;
-  color: #fff;
-  line-height: 0.95;
-  letter-spacing: -0.04em;
+  font-family: var(--font-tight);
+  font-size: clamp(52px, 8vw, 100px);
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+  color: var(--ink-0);
+  margin-bottom: 32px;
+}
+h1 .accent { color: var(--sig); }
+
+.hero-desc {
+  max-width: 560px;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--ink-1);
+  line-height: 1.75;
+  margin-bottom: 40px;
+}
+.hero-desc code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-0);
+  background: var(--bg-1);
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+
+/* Verification strip — monospace data, not metric cards */
+.verify-strip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 2.2;
+  margin-bottom: 48px;
+  background: var(--bg-1);
+  border: 1px solid var(--rule-0);
+  padding: 16px 20px;
+  width: fit-content;
+  max-width: 100%;
+}
+.vl { display:flex; gap:12px; flex-wrap:wrap; }
+.vl-key  { color: var(--ink-2); min-width: 110px; }
+.vl-val  { color: var(--ink-0); font-weight: 500; }
+.vl-note { color: var(--ink-2); }
+.vl + .vl { border-top: 1px solid var(--rule-0); }
+
+.cta-row { display:flex; gap:14px; align-items:center; }
+.btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 12px 24px;
+  display: inline-block;
+  transition: all 0.15s;
+}
+.btn-primary {
+  background: var(--sig);
+  color: oklch(0.97 0.006 62);
+}
+.btn-primary:hover { filter: brightness(0.9); }
+.btn-ghost {
+  border: 1px solid var(--rule-1);
+  color: var(--ink-2);
+}
+.btn-ghost:hover { border-color: var(--sig); color: var(--ink-0); }
+
+/* ── SECTION COMMONS ── */
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+.section {
+  padding: 88px 0;
+  border-bottom: 1px solid var(--rule-0);
+}
+.section-header {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 64px;
+  margin-bottom: 56px;
+  align-items: start;
+}
+.section-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--sig);
+  margin-bottom: 12px;
+}
+h2 {
+  font-family: var(--font-tight);
+  font-size: clamp(28px, 3.5vw, 40px);
+  font-weight: 600;
+  color: var(--ink-0);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+.section-note {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink-1);
+  line-height: 1.75;
+  align-self: end;
+  padding-bottom: 4px;
+}
+.section-note code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-0);
+  background: var(--bg-1);
+  padding: 1px 5px;
+}
+
+/* ── SCROLL REVEAL ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+.reveal.visible { opacity:1; transform:translateY(0); }
+
+/* ── TERMINAL / OSCILLOSCOPE (dark inset) ── */
+.terminal-inset {
+  background: var(--t-bg);
+  border: 1px solid var(--t-rule);
+  overflow: hidden;
+}
+.term-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 18px;
+  background: var(--t-surf);
+  border-bottom: 1px solid var(--t-rule);
+}
+.term-bar-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--t-sig);
+}
+.term-bar-meta {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--t-muted);
+}
+.term-body {
+  padding: 20px 22px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.9;
+  /* scanlines */
+  background-image: repeating-linear-gradient(
+    0deg, transparent, transparent 19px,
+    oklch(0 0 0 / 0.04) 19px, oklch(0 0 0 / 0.04) 20px
+  );
+}
+.sr { display:flex; gap:0; }
+.st  { color: var(--t-cyan);  min-width: 68px; }
+.sep { color: var(--t-rule);  }
+.sr_ { color: var(--t-sig);   min-width: 78px; }
+.sf  { color: oklch(0.80 0.12 55); min-width: 74px; }
+.sb  { color: var(--t-green); min-width: 38px; }
+.sc  { color: var(--t-muted); font-size: 11px; }
+.tok { color: var(--t-green); }
+.thd { color: var(--t-muted); }
+
+.scope-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--rule-0);
   margin-bottom: 32px;
 }
 
-h1 .accent { color: var(--phosphor); text-shadow: 0 0 20px rgba(51,255,102,0.4); }
-
-.hero-sub {
-  max-width: 580px;
-  font-size: 15px;
-  color: var(--text);
-  line-height: 1.75;
-  margin-bottom: 48px;
-  font-family: var(--mono);
-}
-
-.hero-sub strong { color: var(--phosphor); font-weight: 500; }
-
-.hero-spec-row {
-  display: flex;
-  gap: 0;
-  border: 1px solid var(--border);
-  margin-bottom: 48px;
-  width: fit-content;
-}
-
-.hspec {
-  padding: 12px 24px;
-  border-right: 1px solid var(--border);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-}
-
-.hspec:last-child { border-right: none; }
-.hspec-label { color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
-.hspec-val { color: var(--phosphor); font-weight: 700; }
-
-.cta-row { display: flex; gap: 16px; }
-
-.btn {
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 700;
-  text-decoration: none;
-  padding: 12px 24px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  transition: all 0.15s;
-  display: inline-block;
-}
-
-.btn-p {
-  background: var(--phosphor);
-  color: #070a08;
-  box-shadow: 0 0 16px rgba(51,255,102,0.3);
-}
-
-.btn-p:hover { box-shadow: 0 0 32px rgba(51,255,102,0.6); }
-
-.btn-o {
-  border: 1px solid var(--border);
-  color: var(--muted);
-}
-
-.btn-o:hover { border-color: var(--phosphor-dim); color: var(--text); }
-
-/* ── SECTIONS ── */
-.wrap {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 0 40px;
-  position: relative;
-  z-index: 1;
-}
-
-.section {
-  padding: 80px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.section-marker {
+/* ── CONNECTOR ── */
+.connector {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 40px;
+  gap: 20px;
+  padding: 20px 0;
+}
+.conn-line { flex:1; height:1px; background:var(--rule-0); }
+.conn-tags { display:flex; gap:8px; flex-wrap:wrap; }
+.ctag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  border: 1px solid var(--rule-0);
+  padding: 3px 10px;
 }
 
-.section-marker::before {
-  content: '';
-  display: block;
-  width: 4px;
-  height: 28px;
-  background: var(--phosphor);
-  box-shadow: 0 0 8px rgba(51,255,102,0.5);
+/* ── BUG ARCHAEOLOGY ── */
+.bug-list { display:flex; flex-direction:column; gap:0; }
+.bug-entry {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 24px;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--rule-0);
 }
-
-h2 {
-  font-family: var(--display);
-  font-size: 32px;
+.bug-entry:last-child { border-bottom: none; }
+.bug-num {
+  font-family: var(--font-mono);
+  font-size: 22px;
   font-weight: 700;
-  color: #fff;
-  letter-spacing: -0.02em;
+  color: var(--warn);
+  line-height: 1;
+  padding-top: 3px;
+  opacity: 0.8;
 }
-
-p { color: var(--text); margin-bottom: 16px; }
-
-/* ── TERMINAL ── */
-.terminal {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  margin: 32px 0;
-  overflow: hidden;
+.bug-body {}
+.bug-title {
+  font-family: var(--font-tight);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-0);
+  margin-bottom: 10px;
 }
-
-.term-header {
-  background: var(--border);
-  padding: 8px 16px;
-  font-size: 10px;
-  color: var(--muted);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  display: flex;
-  justify-content: space-between;
-}
-
-.term-body {
-  padding: 20px 20px;
-  line-height: 2;
-}
-
-.t-line { display: flex; gap: 12px; }
-.t-p { color: var(--phosphor); user-select: none; }
-.t-c { color: #fff; }
-.t-o { color: var(--text); }
-.t-v { color: var(--amber); }
-.t-ok { color: var(--phosphor); }
-.t-cm { color: var(--muted); }
-
-/* ── WARN BOX ── */
-.warn-box {
-  border: 1px solid rgba(255,170,0,0.3);
-  border-left: 3px solid var(--amber);
-  background: rgba(255,170,0,0.04);
-  padding: 16px 20px;
-  margin: 24px 0;
+.bug-fields { display:flex; flex-direction:column; gap:6px; }
+.bf {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 12px;
   font-size: 13px;
+  line-height: 1.6;
 }
-
-.warn-label {
+.bf-key {
+  font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--amber);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
-
-.warn-box p { color: var(--text); margin: 0; }
-.warn-box code { color: var(--amber); font-size: 12px; }
-
-/* ── REGISTER TABLE ── */
-.reg-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 24px 0;
-  font-size: 12px;
-}
-
-.reg-table th {
-  text-align: left;
-  padding: 10px 16px;
-  background: var(--surface);
-  color: var(--muted);
-  font-size: 10px;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  border-bottom: 1px solid var(--border);
+  color: var(--ink-2);
+  padding-top: 3px;
+}
+.bf-val { color: var(--ink-1); }
+.bf-val code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-0);
+  background: var(--bg-1);
+  padding: 1px 5px;
+}
+.bf-val.insight { color: var(--ink-0); font-weight: 500; }
+
+.bug-closer {
+  margin-top: 40px;
+  padding: 20px 24px;
+  background: var(--ok-bg);
+  border: 1px solid oklch(0.78 0.020 148);
+  font-size: 14px;
+  color: var(--ink-1);
+  line-height: 1.7;
+}
+.bug-closer code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-0);
+  background: var(--bg-1);
+  padding: 1px 5px;
 }
 
-.reg-table td {
-  padding: 10px 16px;
-  border-bottom: 1px solid rgba(26,46,30,0.5);
-  vertical-align: top;
-}
-
-.reg-table tr:hover td { background: rgba(51,255,102,0.02); }
-
-.reg-addr { color: var(--amber); font-weight: 700; }
-.reg-name { color: var(--phosphor); }
-.reg-note { color: var(--muted); }
-.reg-warn { color: var(--red); font-weight: 700; }
-
-/* ── ARCH DIAGRAM ── */
-.arch {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 32px 0;
-}
-
+/* ── ARCHITECTURE ── */
+.arch-diagram { display:flex; flex-direction:column; gap:2px; margin: 0 0 32px; }
 .arch-layer {
-  display: flex;
-  align-items: stretch;
-  height: 64px;
-  border: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 140px 1fr auto;
+  border: 1px solid var(--rule-0);
+  border-top-width: 2px;
   overflow: hidden;
   transition: border-color 0.2s;
 }
-
-.arch-layer:hover { border-color: var(--phosphor-dim); }
-
-.arch-label {
-  width: 180px;
+.arch-layer.app  { border-top-color: var(--sig); }
+.arch-layer.proc { border-top-color: oklch(0.60 0.10 218); }
+.arch-layer.drv  { border-top-color: oklch(0.55 0.10 300); }
+.arch-layer:hover { border-bottom-color: var(--rule-1); border-left-color: var(--rule-1); border-right-color: var(--rule-1); }
+.arch-tag {
+  padding: 18px 20px;
   display: flex;
   align-items: center;
-  padding: 0 20px;
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  border-right: 1px solid var(--border);
-  flex-shrink: 0;
+  border-right: 1px solid var(--rule-0);
+  background: var(--bg-1);
 }
-
-.arch-label.app { color: var(--phosphor); background: rgba(51,255,102,0.04); }
-.arch-label.proc { color: var(--amber); background: rgba(255,170,0,0.04); }
-.arch-label.drv { color: #6699ff; background: rgba(102,153,255,0.04); }
-
-.arch-desc {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  font-size: 12px;
-  color: var(--text);
+.arch-layer.app  .arch-tag { color: var(--sig); }
+.arch-layer.proc .arch-tag { color: oklch(0.50 0.10 218); }
+.arch-layer.drv  .arch-tag { color: oklch(0.48 0.10 300); }
+.arch-detail {
+  padding: 18px 22px;
+  font-size: 13px;
+  color: var(--ink-1);
+  line-height: 1.65;
 }
-
-.arch-files {
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
+.arch-detail strong { color: var(--ink-0); font-weight: 500; }
+.arch-detail code {
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--muted);
-  border-left: 1px solid var(--border);
+  color: var(--sig);
+  background: var(--sig-bg);
+  padding: 1px 5px;
+}
+.arch-files {
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-2);
+  border-left: 1px solid var(--rule-0);
   white-space: nowrap;
 }
-
 .arch-arrow {
   text-align: center;
-  padding: 4px 0;
+  padding: 6px 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-2);
+  letter-spacing: 0.06em;
+}
+.arch-note {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+.arch-note code {
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 0.05em;
+  color: var(--ink-1);
+  background: var(--bg-1);
+  padding: 1px 5px;
 }
 
-/* ── PHASE CONNECTOR (between terminal blocks) ── */
-.phase-connector {
+/* Gotcha block */
+.gotcha-block {
+  margin-top: 32px;
+  background: var(--bg-1);
+  border: 1px solid var(--rule-0);
+  padding: 24px 28px;
+}
+.gotcha-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin-bottom: 16px;
+}
+.gotcha-item {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--ink-1);
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+.gotcha-item:last-child { margin-bottom: 0; }
+.gi-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sig);
+  padding-top: 3px;
+}
+.gotcha-item code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-0);
+  background: var(--bg-0);
+  padding: 1px 5px;
+}
+
+/* ── REGISTER TABLE ── */
+.reg-wrap { overflow-x:auto; margin:24px 0; }
+table.regs { width:100%; border-collapse:collapse; font-size:12.5px; }
+.regs th {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--rule-0);
+  background: var(--bg-1);
+  white-space: nowrap;
+}
+.regs td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--rule-0);
+  vertical-align: top;
+  font-weight: 400;
+}
+.regs tr:hover td { background: var(--sig-bg); }
+/* Peripheral tag chip — no side stripe */
+.ptag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-right: 8px;
+  opacity: 0.85;
+  vertical-align: middle;
+}
+.pt-rcc  { color: var(--pt-rcc); }
+.pt-gpio { color: var(--pt-gpio); }
+.pt-usr  { color: var(--pt-usr); }
+.pt-i2c  { color: var(--pt-i2c); }
+.pt-iwd  { color: var(--pt-iwd); }
+.rn  { font-family:var(--font-mono); color:var(--ink-0); font-size:11.5px; }
+.ra  { font-family:var(--font-mono); color:var(--sig);   font-size:11px; }
+.rb  { font-family:var(--font-mono); color:oklch(0.48 0.10 218); font-size:11px; }
+.rno { color:var(--ink-2); font-size:12px; }
+.rc  { color:var(--warn); font-weight:500; font-size:11.5px; }
+
+/* ── BUILD LOG ── */
+.spec-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  background: var(--rule-0);
+  border: 1px solid var(--rule-0);
+  margin-bottom: 48px;
+}
+.spec-cell { background: var(--bg-0); padding: 18px 22px; }
+.spec-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin-bottom: 5px;
+}
+.spec-val {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sig);
+}
+.spec-val.sm { font-size: 12px; }
+
+.timeline { position:relative; padding:0; }
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px; top: 8px; bottom: 8px;
+  width: 1px;
+  background: var(--rule-0);
+}
+.phase-header {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px 0;
-  font-size: 11px;
+  padding: 28px 0 14px 30px;
 }
-.phase-connector-line {
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-.phase-connector-delta {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.phase-delta-tag {
-  padding: 3px 10px;
-  border: 1px solid var(--phosphor-faint);
-  color: var(--phosphor-dim);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-/* ── HERO CAPABILITY TAGS ── */
-.hero-caps {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 48px;
-  font-size: 12px;
-}
-.hero-caps span {
-  padding: 4px 10px;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  letter-spacing: 0.04em;
-}
-.hero-caps span::before {
-  content: '+ ';
-  color: var(--phosphor);
-}
-
-/* ── MILESTONES ── */
-.milestones { margin: 24px 0; }
-
-/* ── PHASE DIVIDERS in build log ── */
-.ms-phase { padding: 8px 0; }
-.ms-phase-label {
-  font-size: 10px;
+.phase-chip {
+  font-family: var(--font-mono);
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--phosphor-dim);
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  width: 64px;
-  flex-shrink: 0;
+  color: var(--sig);
+  background: var(--sig-bg);
+  border: 1px solid oklch(0.80 0.040 62);
+  padding: 4px 12px;
 }
-.ms-phase-desc { color: var(--muted); font-size: 12px; margin: 0; }
-
-.ms {
+.phase-desc {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.tl-item {
   display: flex;
   gap: 20px;
-  padding: 20px 0;
-  border-bottom: 1px solid var(--border);
-  align-items: flex-start;
+  padding: 16px 0 16px 30px;
+  position: relative;
 }
-
-.ms:last-child { border-bottom: none; }
-
-.ms-tick {
-  font-size: 11px;
+.tl-dot {
+  position: absolute;
+  left: 3px; top: 22px;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: oklch(0.80 0.06 62);
+  border: 1px solid var(--bg-0);
+}
+.tl-dot.done {
+  background: var(--sig);
+}
+.tl-check {
+  font-family: var(--font-mono);
+  font-size: 10px;
   font-weight: 700;
-  width: 64px;
+  color: var(--ok);
+  width: 48px;
   flex-shrink: 0;
   padding-top: 2px;
-  letter-spacing: 0.06em;
+}
+.tl-body { flex:1; }
+.tl-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-0);
+  margin-bottom: 3px;
+}
+.tl-desc {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  margin: 0;
 }
 
-.ms-tick.done { color: var(--phosphor); }
-.ms-tick.wip { color: var(--amber); }
-.ms-tick.todo { color: var(--muted); }
-
-.ms-body { flex: 1; }
-.ms-title { color: var(--text); font-weight: 500; margin-bottom: 4px; font-size: 14px; }
-.ms-desc { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 0; }
-
 /* ── FOOTER ── */
-.footer-bar {
-  border-top: 1px solid var(--border);
-  padding: 40px;
+footer {
+  padding: 40px 48px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--muted);
-  position: relative;
-  z-index: 1;
+  color: var(--ink-2);
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px;
+  background: var(--bg-1);
+  border-top: 1px solid var(--rule-0);
 }
-
-.footer-links { display: flex; gap: 24px; }
-
+.footer-links { display:flex; gap:24px; }
 .footer-links a {
-  color: var(--muted);
+  color: var(--ink-2);
   text-decoration: none;
   letter-spacing: 0.06em;
-  transition: color 0.2s;
+  transition: color 0.15s;
+}
+.footer-links a:hover { color: var(--sig); }
+
+/* ── RESPONSIVE ── */
+/* ── TABLET (769–1024px) ── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .wrap { padding: 0 32px; }
+  nav { padding: 16px 32px; }
+  .hero-content { padding: 0 32px 64px; }
+  .section-header { grid-template-columns: 220px 1fr; gap: 40px; }
+  .arch-layer { grid-template-columns: 120px 1fr; }
+  .arch-files { font-size: 10px; padding: 18px 14px; }
+  .spec-grid { grid-template-columns: repeat(3, 1fr); }
+  .scope-two-col { gap: 1px; }
 }
 
-.footer-links a:hover { color: var(--phosphor); }
-
-@media (max-width: 640px) {
-  nav { padding-left: 20px; padding-right: 20px; grid-template-columns: 1fr; gap: 12px; }
-  .nav-id { grid-column: 1; text-align: left; }
-  .nav-links { grid-column: 1; justify-self: start; }
-  .hero { padding-left: 20px; padding-right: 20px; }
+/* ── MOBILE (<=768px) ── */
+@media (max-width: 768px) {
+  nav { padding: 14px 20px; }
+  .nav-links { gap: 20px; }
+  .hero-content { padding: 0 20px 48px; }
   .wrap { padding: 0 20px; }
-  .hero-spec-row { flex-direction: column; width: 100%; }
-  .hspec { border-right: none; border-bottom: 1px solid var(--border); }
-  .arch-files { display: none; }
-  .footer-bar { padding: 24px 20px; }
+  .section { padding: 56px 0; }
+  .section-header { grid-template-columns: 1fr; gap: 16px; }
+  /* Nav: wrap links, reduce gap so all 6 links stay visible */
+  nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 20px;
+  }
+  .nav-links {
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .nav-links a { font-size: 11px; }
+
+  .scope-two-col { grid-template-columns: 1fr; }
+
+  /* Architecture: keep tag+detail 2-col, move files to full-width third row */
+  .arch-layer {
+    grid-template-columns: 110px 1fr;
+    grid-template-rows: auto auto;
+  }
+  .arch-files {
+    display: block;
+    grid-column: 1 / -1;
+    border-left: none;
+    border-top: 1px solid var(--rule-0);
+    padding: 8px 16px;
+    font-size: 9px;
+  }
+
+  .spec-grid { grid-template-columns: repeat(2, 1fr); }
+  .bf { grid-template-columns: 80px 1fr; }
+
+  /* Bug entry: tighten the number column on very narrow screens */
+  .bug-entry { grid-template-columns: 40px 1fr; gap: 16px; }
+  .bug-num { font-size: 18px; }
+
+  footer { padding: 28px 20px; }
+
+  /* Verify strip: allow horizontal scroll rather than overflow */
+  .verify-strip { overflow-x: auto; width: 100%; }
+
+  /* Gotcha block: tighten grid */
+  .gotcha-item { grid-template-columns: 20px 1fr; gap: 10px; }
 }
 </style>
 </head>
 <body>
-<div class="grid-bg"></div>
 
+<!-- ── NAV ── -->
 <nav>
-  <span class="nav-id">STM32 Vitals Monitor - Vaibhav Aher</span>
-  <div class="nav-links">
-    <a href="https://github.com/VaibhavAher100/stm32-vitals-monitor">GitHub</a>
-    <a href="#progress">Progress</a>
+  <span class="nav-brand">STM32 · Vitals Monitor</span>
+  <ul class="nav-links">
+    <a href="https://github.com/VaibhavAher100/stm32-vitals-monitor" target="_blank">GitHub</a>
+    <a href="#output">Output</a>
+    <a href="#bugs">Bugs</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#progress">Build log</a>
     <a href="https://vaibhavaher100.github.io/rpi-object-orientation-tracker/">RPi project</a>
-  </div>
+  </ul>
 </nav>
 
 <!-- ── HERO ── -->
 <div class="hero">
-  <div class="status-bar">
-    <span class="status-dot">UART · verified</span>
-    <span class="status-dot">TMP117 · 25.3 C</span>
-    <span class="status-dot">MAX30102 · IR 87000+ finger</span>
-    <span class="status-dot">IWDG · 4s watchdog</span>
-    <span class="status-dot">BPM · 119 verified</span>
-    <span class="status-dot">FreeRTOS V10.5.1 · 2 tasks</span>
+  <div class="waveform-wrap">
+    <svg class="waveform-svg" viewBox="0 0 1600 280" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path class="ppg-glow" d="M0,140 L30,140 L34,138 L38,132 L42,88 L46,50 L50,36 L54,50 L58,74 L62,98 L66,116 L70,122 L74,118 L78,112 L82,116 L86,120 L90,126 L94,132 L98,138 L102,140 L130,140 L134,138 L138,132 L142,88 L146,50 L150,36 L154,50 L158,74 L162,98 L166,116 L170,122 L174,118 L178,112 L182,116 L186,120 L190,126 L194,132 L198,138 L202,140 L230,140 L234,138 L238,132 L242,88 L246,50 L250,36 L254,50 L258,74 L262,98 L266,116 L270,122 L274,118 L278,112 L282,116 L286,120 L290,126 L294,132 L298,138 L302,140 L330,140 L334,138 L338,132 L342,88 L346,50 L350,36 L354,50 L358,74 L362,98 L366,116 L370,122 L374,118 L378,112 L382,116 L386,120 L390,126 L394,132 L398,138 L402,140 L430,140 L434,138 L438,132 L442,88 L446,50 L450,36 L454,50 L458,74 L462,98 L466,116 L470,122 L474,118 L478,112 L482,116 L486,120 L490,126 L494,132 L498,138 L502,140 L530,140 L534,138 L538,132 L542,88 L546,50 L550,36 L554,50 L558,74 L562,98 L566,116 L570,122 L574,118 L578,112 L582,116 L586,120 L590,126 L594,132 L598,138 L602,140 L630,140 L634,138 L638,132 L642,88 L646,50 L650,36 L654,50 L658,74 L662,98 L666,116 L670,122 L674,118 L678,112 L682,116 L686,120 L690,126 L694,132 L698,138 L702,140 L730,140 L734,138 L738,132 L742,88 L746,50 L750,36 L754,50 L758,74 L762,98 L766,116 L770,122 L774,118 L778,112 L782,116 L786,120 L790,126 L794,132 L798,138 L800,140"/>
+      <path class="ppg-line" d="M0,140 L30,140 L34,138 L38,132 L42,88 L46,50 L50,36 L54,50 L58,74 L62,98 L66,116 L70,122 L74,118 L78,112 L82,116 L86,120 L90,126 L94,132 L98,138 L102,140 L130,140 L134,138 L138,132 L142,88 L146,50 L150,36 L154,50 L158,74 L162,98 L166,116 L170,122 L174,118 L178,112 L182,116 L186,120 L190,126 L194,132 L198,138 L202,140 L230,140 L234,138 L238,132 L242,88 L246,50 L250,36 L254,50 L258,74 L262,98 L266,116 L270,122 L274,118 L278,112 L282,116 L286,120 L290,126 L294,132 L298,138 L302,140 L330,140 L334,138 L338,132 L342,88 L346,50 L350,36 L354,50 L358,74 L362,98 L366,116 L370,122 L374,118 L378,112 L382,116 L386,120 L390,126 L394,132 L398,138 L402,140 L430,140 L434,138 L438,132 L442,88 L446,50 L450,36 L454,50 L458,74 L462,98 L466,116 L470,122 L474,118 L478,112 L482,116 L486,120 L490,126 L494,132 L498,138 L502,140 L530,140 L534,138 L538,132 L542,88 L546,50 L550,36 L554,50 L558,74 L562,98 L566,116 L570,122 L574,118 L578,112 L582,116 L586,120 L590,126 L594,132 L598,138 L602,140 L630,140 L634,138 L638,132 L642,88 L646,50 L650,36 L654,50 L658,74 L662,98 L666,116 L670,122 L674,118 L678,112 L682,116 L686,120 L690,126 L694,132 L698,138 L702,140 L730,140 L734,138 L738,132 L742,88 L746,50 L750,36 L754,50 L758,74 L762,98 L766,116 L770,122 L774,118 L778,112 L782,116 L786,120 L790,126 L794,132 L798,138 L800,140"/>
+    </svg>
   </div>
 
-  <h1>STM32<br><span class="accent">Vitals</span><br>Monitor</h1>
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <div class="blink-dot"></div>
+      <span class="eyebrow-label">Hardware verified · Nucleo-L476RG · April 2026</span>
+    </div>
 
-  <p class="hero-sub">
-    Bare-metal firmware on STM32L476RG (Cortex-M4). <strong>No HAL. No CubeMX-generated peripheral init.</strong><br>
-    All peripheral drivers are handwritten register-level C using CMSIS device headers
-    (<code>stm32l476xx.h</code>) - <code>USART2-&gt;BRR</code>, not <code>0x4000440C</code>.
-    <code>syscalls.c</code> / <code>sysmem.c</code> are IDE-generated newlib stubs, retained unchanged.
-    Commit history shows the prototype-to-RTOS evolution across four phases.
-  </p>
+    <h1>STM32<br><span class="accent">Vitals</span><br>Monitor</h1>
 
-  <div class="hero-caps">
-    <span>CMSIS device headers</span>
-    <span>I2C sensor drivers</span>
-    <span>moving average filter</span>
-    <span>BPM from PPG</span>
-    <span>IWDG watchdog</span>
-    <span>FreeRTOS V10.5.1</span>
-    <span>two-task + queue</span>
-    <span>3-layer architecture</span>
-    <span>MISRA-C analysed</span>
-    <span>hardware verified</span>
-  </div>
+    <p class="hero-desc">
+      Bare-metal firmware on STM32L476RG, Cortex-M4F. No HAL, no CubeMX. Every peripheral driver is hand-written in register-level C through CMSIS structs. FreeRTOS V10.5.1, two tasks, one depth-1 queue, IWDG watchdog. Sixty-three commits across four phases. Verified on hardware: BPM&nbsp;119 stable, 25.3&nbsp;°C on TMP117, zero IWDG resets over a 5-minute continuous run.
+    </p>
 
-  <div class="hero-spec-row">
-    <div class="hspec">
-      <div class="hspec-label">MCU</div>
-      <div class="hspec-val">STM32L476RG</div>
+    <div class="verify-strip">
+      <div class="vl">
+        <span class="vl-key">TMP117</span>
+        <span class="vl-val">25.3&nbsp;°C ambient</span>
+        <span class="vl-note">· formula (raw×625)/8000 · 7.8125&nbsp;m°C/LSB exact</span>
+      </div>
+      <div class="vl">
+        <span class="vl-key">MAX30102 IR</span>
+        <span class="vl-val">~775 ambient · ~87&thinsp;000 finger</span>
+        <span class="vl-note">· part ID 0x15 verified</span>
+      </div>
+      <div class="vl">
+        <span class="vl-key">BPM</span>
+        <span class="vl-val">119 stable, 50+ rows</span>
+        <span class="vl-note">· refractory rejections visible in log</span>
+      </div>
+      <div class="vl">
+        <span class="vl-key">IWDG</span>
+        <span class="vl-val">zero resets, 5 min run</span>
+        <span class="vl-note">· 4&nbsp;s timeout, kicked every 500&nbsp;ms by task_sensor</span>
+      </div>
+      <div class="vl">
+        <span class="vl-key">Unit tests</span>
+        <span class="vl-val">15 cases</span>
+        <span class="vl-note">· test_filter.c (8) + test_bpm.c (7) · host gcc, no hardware</span>
+      </div>
     </div>
-    <div class="hspec">
-      <div class="hspec-label">Core</div>
-      <div class="hspec-val">Cortex-M4</div>
-    </div>
-    <div class="hspec">
-      <div class="hspec-label">Clock</div>
-      <div class="hspec-val">4 MHz MSI</div>
-    </div>
-    <div class="hspec">
-      <div class="hspec-label">Sensors</div>
-      <div class="hspec-val">TMP117 + MAX30102</div>
-    </div>
-    <div class="hspec">
-      <div class="hspec-label">HAL</div>
-      <div class="hspec-val">None</div>
-    </div>
-    <div class="hspec">
-      <div class="hspec-label">RTOS</div>
-      <div class="hspec-val">FreeRTOS V10.5.1</div>
-    </div>
-  </div>
 
-  <div class="cta-row">
-    <a href="https://github.com/VaibhavAher100/stm32-vitals-monitor" class="btn btn-p" target="_blank">View source →</a>
-    <a href="#progress" class="btn btn-o">Build log</a>
+    <div class="cta-row">
+      <a href="https://github.com/VaibhavAher100/stm32-vitals-monitor" class="btn btn-primary" target="_blank">View source →</a>
+      <a href="#bugs" class="btn btn-ghost">Bug archaeology</a>
+    </div>
   </div>
 </div>
 
-<!-- ── VERIFIED OUTPUT ── -->
-<div class="wrap">
-<div class="section">
-  <div class="section-marker"><h2>Verified output</h2></div>
-  <p>TMP117 at 0x49, MAX30102 at 0x57, both on I2C1 (PB8/PB9). The filter column makes the 8-sample window visible - raw responds immediately to contact, filtered takes 8 rows to catch up. BPM locks after two threshold crossings; last value holds when finger is removed.</p>
-
-  <div class="terminal">
-    <div class="term-header">
-      <span>CoolTerm - COM7 · 9600 8-N-1 · ambient + filter ramp</span>
-      <span>8-sample moving average · circular buffer · O(1)</span>
+<!-- ── §01 VERIFIED OUTPUT ── -->
+<div class="wrap" id="output">
+<div class="section reveal">
+  <div class="section-header">
+    <div>
+      <div class="section-tag">§ 01 · Output</div>
+      <h2>Verified signal</h2>
     </div>
-    <div class="term-body">
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">778</span><span class="t-o">    | </span><span class="t-v">778</span><span class="t-o">   | </span><span class="t-v">---</span><span class="t-cm">  // ambient - no finger, sensor sees room light</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">780</span><span class="t-o">    | </span><span class="t-v">779</span><span class="t-o">   | </span><span class="t-v">---</span></div>
-      <div class="t-line"><span class="t-cm">// finger placed - raw jumps 778→62657 in one tick; filter must average 8 samples</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">62657</span><span class="t-o">  | </span><span class="t-v">8615</span><span class="t-o">  | </span><span class="t-v">119</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">70174</span><span class="t-o">  | </span><span class="t-v">17288</span><span class="t-o"> | </span><span class="t-v">119</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">80963</span><span class="t-o">  | </span><span class="t-v">35808</span><span class="t-o"> | </span><span class="t-v">119</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">87266</span><span class="t-o">  | </span><span class="t-v">46619</span><span class="t-o"> | </span><span class="t-v">119</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">87750</span><span class="t-o">  | </span><span class="t-v">79062</span><span class="t-o"> | </span><span class="t-v">119</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">87543</span><span class="t-o">  | </span><span class="t-v">87611</span><span class="t-o"> | </span><span class="t-v">119</span><span class="t-cm">  // filter window full - filt ≈ raw</span></div>
-      <div class="t-line"><span class="t-cm">// finger removed - raw drops to ambient; filt decays over 8 rows</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">1077</span><span class="t-o">   | </span><span class="t-v">11502</span><span class="t-o"> | </span><span class="t-v">119</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">1071</span><span class="t-o">   | </span><span class="t-v">1074</span><span class="t-o">  | </span><span class="t-v">119</span><span class="t-cm">  // fully decayed; BPM holds last interval</span></div>
+    <p class="section-note">
+      TMP117 at 0x49, MAX30102 at 0x57, both on I2C1 (PB8/PB9). The filter column shows the 8-sample window: raw jumps immediately on contact, filtered takes 8 rows to catch up. BPM locks after two threshold crossings. The last value holds when the finger is removed.
+    </p>
+  </div>
+
+  <div class="scope-two-col">
+    <div class="terminal-inset">
+      <div class="term-bar">
+        <span class="term-bar-label">COM7 · 9600 8-N-1 · ambient + filter ramp</span>
+        <span class="term-bar-meta">8-sample MA · O(1)</span>
+      </div>
+      <div class="term-body">
+        <div class="sr"><span class="thd">Temp(C)  | IR raw  | IR filt | BPM</span></div>
+        <div class="sr"><span class="thd">---------+---------+---------+----</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">778    </span><span class="sep"> | </span><span class="sf">778  </span><span class="sep"> | </span><span class="sb">---</span><span class="sc">&nbsp;// ambient</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">780    </span><span class="sep"> | </span><span class="sf">779  </span><span class="sep"> | </span><span class="sb">---</span></div>
+        <div class="sr"><span class="sc">// finger placed: raw jumps 778→62657 in one tick</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">62657  </span><span class="sep"> | </span><span class="sf">8615 </span><span class="sep"> | </span><span class="sb">119</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">70174  </span><span class="sep"> | </span><span class="sf">17288</span><span class="sep"> | </span><span class="sb">119</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">80963  </span><span class="sep"> | </span><span class="sf">35808</span><span class="sep"> | </span><span class="sb">119</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">87266  </span><span class="sep"> | </span><span class="sf">46619</span><span class="sep"> | </span><span class="sb">119</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">87543  </span><span class="sep"> | </span><span class="sf">87611</span><span class="sep"> | </span><span class="sb">119</span><span class="sc">&nbsp;// filter full</span></div>
+        <div class="sr"><span class="sc">// finger removed; filt decays over 8 rows</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">1077   </span><span class="sep"> | </span><span class="sf">11502</span><span class="sep"> | </span><span class="sb">119</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">1071   </span><span class="sep"> | </span><span class="sf">1074 </span><span class="sep"> | </span><span class="sb">119</span><span class="sc">&nbsp;// decayed, BPM holds</span></div>
+      </div>
+    </div>
+
+    <div class="terminal-inset">
+      <div class="term-bar">
+        <span class="term-bar-label">Phase 4 CMSIS build · April 2026</span>
+        <span class="term-bar-meta">task_sensor + task_uart</span>
+      </div>
+      <div class="term-body">
+        <div class="sr"><span class="tok">STM32 Vitals Monitor</span></div>
+        <div class="sr"><span class="thd">========================</span></div>
+        <div class="sr"><span class="tok">TMP117   OK</span></div>
+        <div class="sr"><span class="tok">MAX30102 OK</span></div>
+        <div class="sr"><span class="thd">========================</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">1471   </span><span class="sep"> | </span><span class="sf">80631</span><span class="sep"> | </span><span class="sb">---</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">37118  </span><span class="sep"> | </span><span class="sf">62650</span><span class="sep"> | </span><span class="sb">---</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">81135  </span><span class="sep"> | </span><span class="sf">57577</span><span class="sep"> | </span><span class="sb">---</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">82421  </span><span class="sep"> | </span><span class="sf">75201</span><span class="sep"> | </span><span class="sb">---</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">86560  </span><span class="sep"> | </span><span class="sf">86367</span><span class="sep"> | </span><span class="sb">119</span><span class="sc">&nbsp;// BPM locks</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">86536  </span><span class="sep"> | </span><span class="sf">86576</span><span class="sep"> | </span><span class="sb">119</span></div>
+        <div class="sr"><span class="st">25.2</span><span class="sep"> | </span><span class="sr_">86461  </span><span class="sep"> | </span><span class="sf">86518</span><span class="sep"> | </span><span class="sb">119</span></div>
+        <div class="sr"><span class="st">25.3</span><span class="sep"> | </span><span class="sr_">86375  </span><span class="sep"> | </span><span class="sf">86384</span><span class="sep"> | </span><span class="sb">119</span></div>
+      </div>
     </div>
   </div>
 
-  <div class="phase-connector">
-    <div class="phase-connector-line"></div>
-    <div class="phase-connector-delta">
-      <span class="phase-delta-tag">task_sensor priority 2</span>
-      <span class="phase-delta-tag">task_uart priority 1</span>
-      <span class="phase-delta-tag">depth-1 queue xQueueOverwrite</span>
-      <span class="phase-delta-tag">IWDG kick inside task_sensor</span>
+  <div class="connector">
+    <div class="conn-line"></div>
+    <div class="conn-tags">
+      <span class="ctag">task_sensor priority 2</span>
+      <span class="ctag">task_uart priority 1</span>
+      <span class="ctag">depth-1 queue · xQueueOverwrite</span>
+      <span class="ctag">IWDG kick 500 ms</span>
     </div>
-    <div class="phase-connector-line"></div>
-  </div>
-
-  <div class="terminal">
-    <div class="term-header">
-      <span>CoolTerm - COM7 · 9600 8-N-1 · Phase 4 (CMSIS build)</span>
-      <span>task_sensor + task_uart · BPM verified · April 2026</span>
-    </div>
-    <div class="term-body">
-      <div class="t-line"><span class="t-ok">STM32 Vitals Monitor</span></div>
-      <div class="t-line" style="margin-top:8px"><span class="t-o">Temp(C) | IR raw  | IR filt | BPM</span></div>
-      <div class="t-line"><span class="t-o">--------+---------+---------+----</span></div>
-      <div class="t-line"><span class="t-ok">TMP117   OK</span></div>
-      <div class="t-line"><span class="t-ok">MAX30102 OK</span></div>
-      <div class="t-line" style="margin-top:8px"><span class="t-o">25.3       | </span><span class="t-v">1471</span><span class="t-o">   | </span><span class="t-v">80631</span><span class="t-o"> | </span><span class="t-v">---</span><span class="t-cm">  // finger placed, filter climbing</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">37118</span><span class="t-o">  | </span><span class="t-v">62650</span><span class="t-o"> | </span><span class="t-v">---</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">81135</span><span class="t-o">  | </span><span class="t-v">57577</span><span class="t-o"> | </span><span class="t-v">---</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">82421</span><span class="t-o">  | </span><span class="t-v">75201</span><span class="t-o"> | </span><span class="t-v">---</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">86560</span><span class="t-o">  | </span><span class="t-v">86367</span><span class="t-o"> | </span><span class="t-v">119</span><span class="t-cm">  // BPM locks after 2 threshold crossings</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">86536</span><span class="t-o">  | </span><span class="t-v">86576</span><span class="t-o"> | </span><span class="t-v">119</span></div>
-      <div class="t-line"><span class="t-o">25.2       | </span><span class="t-v">86461</span><span class="t-o">  | </span><span class="t-v">86518</span><span class="t-o"> | </span><span class="t-v">119</span></div>
-      <div class="t-line"><span class="t-o">25.3       | </span><span class="t-v">86375</span><span class="t-o">  | </span><span class="t-v">86384</span><span class="t-o"> | </span><span class="t-v">119</span></div>
-    </div>
-  </div>
-
-  <div class="warn-box">
-    <div class="warn-label">Bug #1 - resolved via CMSIS migration</div>
-    <p>Original code manually typed <code>0x40004408</code> for USART2_BRR. Correct address is <code>0x4000440C</code> (offset 0x0C, not 0x08 - that is CR3). Baud divisor written to CR3 = no output, no error. Four hours of debugging, one wrong hex digit. Fix: moved to CMSIS struct access (<code>USART2-&gt;BRR</code>) - the compiler resolves the offset, no addresses to mistype.</p>
-  </div>
-
-  <div class="warn-box">
-    <div class="warn-label">Bug #2 - IWDG hung before main() printed anything</div>
-    <p>The IWDG SR update flags (<code>PVU</code>, <code>RVU</code>) only clear once the watchdog is running.
-    Writing <code>0x5555</code> (unlock) before <code>0xCCCC</code> (start) means they never clear -
-    <code>while(IWDG-&gt;SR != 0)</code> loops forever. Also: LSI oscillator must be explicitly enabled via
-    <code>RCC-&gt;CSR |= RCC_CSR_LSION</code> and <code>LSIRDY</code> confirmed before any IWDG config.
-    Found with GDB - firmware appeared dead, no UART output at all. RM0351 section 34.3.</p>
+    <div class="conn-line"></div>
   </div>
 </div>
 </div>
 
-<!-- ── REGISTER MAP ── -->
-<div class="wrap">
-<div class="section">
-  <div class="section-marker"><h2>Register map</h2></div>
-  <p>Register access via CMSIS device headers (<code>stm32l476xx.h</code>, STMicroelectronics/cmsis-device-l4). The compiler resolves struct offsets from RM0351 - no hand-typed addresses to mistype.</p>
+<!-- ── §02 BUG ARCHAEOLOGY ── -->
+<div class="wrap" id="bugs">
+<div class="section reveal">
+  <div class="section-header">
+    <div>
+      <div class="section-tag">§ 02 · Bug archaeology</div>
+      <h2>Seven bugs that left traces</h2>
+    </div>
+    <p class="section-note">
+      Three of them required GDB or a second-pass code review to find. The bugs are ordered by how long they took to locate, not by phase. Bug 02 produced the largest structural payoff: eliminating raw addresses removed twenty-six MISRA Rule&nbsp;11.4 findings and an entire class of future typos.
+    </p>
+  </div>
 
-  <table class="reg-table">
-    <thead>
-      <tr>
-        <th>Register</th>
-        <th>CMSIS access</th>
-        <th>Bits / value</th>
-        <th>Note</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td class="reg-name">RCC_AHB2ENR</td><td class="reg-addr">RCC-&gt;AHB2ENR</td><td>RCC_AHB2ENR_GPIOAEN, GPIOBEN</td><td class="reg-note">Clock enable before any peripheral access</td></tr>
-      <tr><td class="reg-name">RCC_APB1ENR1</td><td class="reg-addr">RCC-&gt;APB1ENR1</td><td>bit 17 = USART2, bit 21 = I2C1</td><td class="reg-note"></td></tr>
-      <tr><td class="reg-name">GPIOA_MODER</td><td class="reg-addr">GPIOA-&gt;MODER</td><td>bits 5:4 = PA2 AF mode</td><td class="reg-note">10 = AF, AF7 = USART2_TX via AFR[0]</td></tr>
-      <tr><td class="reg-name">GPIOB_OTYPER</td><td class="reg-addr">GPIOB-&gt;OTYPER</td><td>bits 8,9 = PB8, PB9 open-drain</td><td class="reg-note">I2C requires open-drain outputs</td></tr>
-      <tr><td class="reg-name">GPIOB_AFR[1]</td><td class="reg-addr">GPIOB-&gt;AFR[1]</td><td>PB8, PB9 → AF4 = I2C1</td><td class="reg-note">AFRH register</td></tr>
-      <tr><td class="reg-name">USART2_BRR</td><td class="reg-addr">USART2-&gt;BRR</td><td>417 = 9600 baud at 4 MHz MSI</td><td class="reg-note">Compiler resolves offset - was 0x0C hex typo bug before CMSIS</td></tr>
-      <tr><td class="reg-name">USART2_ISR</td><td class="reg-addr">USART2-&gt;ISR</td><td>USART_ISR_TXE = bit 7</td><td class="reg-note">Poll before each TDR write</td></tr>
-      <tr><td class="reg-name">I2C1_TIMINGR</td><td class="reg-addr">I2C1-&gt;TIMINGR</td><td>0x00100D14</td><td class="reg-note">100 kHz standard mode at 4 MHz</td></tr>
-      <tr><td class="reg-name">RCC_CSR</td><td class="reg-addr">RCC-&gt;CSR</td><td>RCC_CSR_LSION, RCC_CSR_LSIRDY</td><td class="reg-note">LSI must be ready before IWDG config - sequence bug if skipped</td></tr>
-      <tr><td class="reg-name">IWDG_KR</td><td class="reg-addr">IWDG-&gt;KR</td><td>0xCCCC start, 0x5555 unlock, 0xAAAA kick</td><td class="reg-note">0xCCCC must precede 0x5555 - order is not optional</td></tr>
-      <tr><td class="reg-name">IWDG_PR</td><td class="reg-addr">IWDG-&gt;PR</td><td>0x03 = prescaler /32</td><td class="reg-note">32 kHz LSI / 32 = 1 ms per tick</td></tr>
-      <tr><td class="reg-name">IWDG_RLR</td><td class="reg-addr">IWDG-&gt;RLR</td><td>0xFA0 = 4000 ticks</td><td class="reg-note">4 s timeout, kicked every 500 ms by task_sensor</td></tr>
-    </tbody>
-  </table>
+  <div class="bug-list">
+
+    <div class="bug-entry">
+      <span class="bug-num">01</span>
+      <div class="bug-body">
+        <div class="bug-title">IWDG write order</div>
+        <div class="bug-fields">
+          <div class="bf"><span class="bf-key">Symptom</span><span class="bf-val">Chip resets before <code>main()</code> reaches its first UART byte. Silent. No fault handler fires.</span></div>
+          <div class="bf"><span class="bf-key">Root cause</span><span class="bf-val"><code>IWDG_KR</code> requires <code>0xCCCC</code> first, then <code>0x5555</code>. Reversed, the LSI clock starts after the unlock window closes and the <code>PVU</code>/<code>RVU</code> sync flags never clear. The spin-loop <code>while(IWDG-&gt;SR != 0)</code> hangs forever. RM0351 §34.3.</span></div>
+          <div class="bf"><span class="bf-key">Found with</span><span class="bf-val">GDB single-step at power-on. No other symptom was visible.</span></div>
+          <div class="bf"><span class="bf-key">Insight</span><span class="bf-val insight">ST's reference documents the sequence but not the failure mode. The LSI enable (<code>RCC_CSR_LSION</code>) and <code>LSIRDY</code> wait must also precede all IWDG config.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bug-entry">
+      <span class="bug-num">02</span>
+      <div class="bug-body">
+        <div class="bug-title">USART2_BRR offset typo</div>
+        <div class="bug-fields">
+          <div class="bf"><span class="bf-key">Symptom</span><span class="bf-val">No UART output. BRR reads back zero every time it is written. Four hours.</span></div>
+          <div class="bf"><span class="bf-key">Root cause</span><span class="bf-val">Typed <code>0x4000440C</code> (CR3) instead of <code>0x40004408</code> (BRR). One hex digit difference, invisible at a glance.</span></div>
+          <div class="bf"><span class="bf-key">Found with</span><span class="bf-val">Register dump in GDB confirming that <code>CR3</code> was changing, not <code>BRR</code>.</span></div>
+          <div class="bf"><span class="bf-key">Insight</span><span class="bf-val insight">The real fix was not the one-character correction. Every peripheral migrated to CMSIS struct access (<code>USART2-&gt;BRR</code>), after which twenty-six Rule&nbsp;11.4 MISRA findings became obsolete and no raw address remained in the codebase.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bug-entry">
+      <span class="bug-num">03</span>
+      <div class="bug-body">
+        <div class="bug-title">Timeout post-decrement underflow</div>
+        <div class="bug-fields">
+          <div class="bf"><span class="bf-key">Symptom</span><span class="bf-val">I2C error-recovery paths were dead code. A stuck bus never returned an error to the caller.</span></div>
+          <div class="bf"><span class="bf-key">Root cause</span><span class="bf-val"><code>while (!timeout) { ...; timeout--; }</code> with an unsigned counter: the first iteration sets <code>timeout</code> to <code>UINT_MAX</code> on decrement because the condition <code>!timeout</code> is false at any nonzero value. The guard <code>if (!timeout)</code> below it was always false.</span></div>
+          <div class="bf"><span class="bf-key">Found with</span><span class="bf-val">Multi-pass code review. The happy path masked it entirely.</span></div>
+          <div class="bf"><span class="bf-key">Fix</span><span class="bf-val insight"><code>while (timeout &gt; 0U) { ...; timeout--; }</code> with explicit <code>if (timeout == 0U)</code> guards. All error paths now reachable.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bug-entry">
+      <span class="bug-num">04</span>
+      <div class="bug-body">
+        <div class="bug-title">busy_delay_ms blocking the scheduler</div>
+        <div class="bug-fields">
+          <div class="bf"><span class="bf-key">Symptom</span><span class="bf-val">UART output jitter, 150 ms stall visible at task startup. Sensor not blocking; scheduler itself was blocked.</span></div>
+          <div class="bf"><span class="bf-key">Root cause</span><span class="bf-val"><code>max30102.c</code> called <code>busy_delay_ms(150)</code> inside <code>task_sensor</code> for the MAX30102 reset. A CPU spin inside a task holds the scheduler for the full duration.</span></div>
+          <div class="bf"><span class="bf-key">Fix</span><span class="bf-val"><code>vTaskDelay(pdMS_TO_TICKS(150))</code>. The init moved into <code>task_sensor</code> so it runs after <code>vTaskStartScheduler()</code>, where <code>vTaskDelay</code> is safe.</span></div>
+          <div class="bf"><span class="bf-key">Insight</span><span class="bf-val insight">Any code that runs inside a task after the scheduler starts cannot use busy-wait timing. The scheduler owns the CPU between yields.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bug-entry">
+      <span class="bug-num">05</span>
+      <div class="bug-body">
+        <div class="bug-title">TMP117 conversion formula</div>
+        <div class="bug-fields">
+          <div class="bf"><span class="bf-key">Symptom</span><span class="bf-val">Temperature readings 0.05&nbsp;°C low across the ambient range. Systematic, not noise.</span></div>
+          <div class="bf"><span class="bf-key">Root cause</span><span class="bf-val"><code>raw × 78 / 1000</code> approximates 0.078, not the true 0.078125&nbsp;°C/LSB.</span></div>
+          <div class="bf"><span class="bf-key">Fix</span><span class="bf-val"><code>(raw × 625) / 8000</code>: integer math, no float, exact conversion. Verified 25.3&nbsp;°C ambient on hardware.</span></div>
+          <div class="bf"><span class="bf-key">Insight</span><span class="bf-val insight">The TMP117 datasheet states 7.8125&nbsp;m°C/LSB. The numerator 625 and denominator 8000 are the smallest integers that represent that ratio exactly.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bug-entry">
+      <span class="bug-num">06</span>
+      <div class="bug-body">
+        <div class="bug-title">Negative temperature sign placement</div>
+        <div class="bug-fields">
+          <div class="bf"><span class="bf-key">Symptom</span><span class="bf-val">Temperatures below zero printed as <code>25.-3°C</code> rather than <code>-25.3°C</code>.</span></div>
+          <div class="bf"><span class="bf-key">Root cause</span><span class="bf-val">The sign character was emitted after the integer part, before the decimal digit, in the integer formatter.</span></div>
+          <div class="bf"><span class="bf-key">Fix</span><span class="bf-val">Two-line correction in <code>uart.c</code>: check sign before printing the whole-number part.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bug-entry">
+      <span class="bug-num">07</span>
+      <div class="bug-body">
+        <div class="bug-title">BPM refractory period correct by coincidence</div>
+        <div class="bug-fields">
+          <div class="bf"><span class="bf-key">Symptom</span><span class="bf-val">None at <code>configTICK_RATE_HZ=1000</code>. Would produce wrong peak rejection at any other tick rate.</span></div>
+          <div class="bf"><span class="bf-key">Root cause</span><span class="bf-val"><code>refractory_ticks = 333</code> happened to equal 333&nbsp;ms only because the tick rate was 1000&nbsp;Hz. The constant was treated as milliseconds without conversion.</span></div>
+          <div class="bf"><span class="bf-key">Fix</span><span class="bf-val"><code>pdMS_TO_TICKS(333)</code>. Correct at any tick rate.</span></div>
+          <div class="bf"><span class="bf-key">Insight</span><span class="bf-val insight">Correct-by-coincidence is a latent bug. The code looked right, passed all tests, and would have failed silently on a different board configuration.</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bug-closer">
+    Bug&nbsp;02 produced the largest payoff. Eliminating raw volatile pointer casts removed twenty-six Rule&nbsp;11.4 findings from the MISRA analysis and an entire class of future offset typos. Standard Cppcheck now returns zero findings on all nine project source files.
+  </div>
 </div>
 </div>
 
-<!-- ── ARCHITECTURE ── -->
-<div class="wrap">
-<div class="section">
-  <div class="section-marker"><h2>Architecture</h2></div>
-  <p>Prototype phase: one file. Refactor phase: three layers. Phase 4: FreeRTOS two-task design - <code>task_sensor</code> reads, filters, detects BPM, kicks IWDG; <code>task_uart</code> blocks on a depth-1 queue and formats output. Rule: application never touches registers. Driver never calls application. No malloc anywhere in authored code.</p>
+<!-- ── §03 ARCHITECTURE ── -->
+<div class="wrap" id="architecture">
+<div class="section reveal">
+  <div class="section-header">
+    <div>
+      <div class="section-tag">§ 03 · Architecture</div>
+      <h2>Three layers, two tasks</h2>
+    </div>
+    <p class="section-note">
+      Two tasks, one queue, one watchdog. <code>task_sensor</code> reads TMP117 and MAX30102, runs the 8-sample moving average and dynamic-threshold BPM detector, writes one sample to a depth-1 queue with <code>xQueueOverwrite</code>, kicks the IWDG, and sleeps 500&nbsp;ms. <code>task_uart</code> blocks on <code>xQueueReceive</code>, formats, and transmits. The queue depth is one on purpose: UART is slower than the sensor, and stale readings are meant to be dropped.
+    </p>
+  </div>
 
-  <div class="arch">
-    <div class="arch-layer">
-      <div class="arch-label app">Application</div>
-      <div class="arch-desc">task_sensor (priority 2): sensors → filter → BPM → xQueueOverwrite → IWDG kick → vTaskDelay 500 ms. task_uart (priority 1): xQueueReceive blocks → UART format.</div>
+  <div class="arch-diagram">
+    <div class="arch-layer app">
+      <div class="arch-tag">Application</div>
+      <div class="arch-detail">
+        <strong>task_sensor</strong> (priority 2): sensors → filter → BPM → <code>xQueueOverwrite</code> → IWDG kick → <code>vTaskDelay(500)</code><br>
+        <strong>task_uart</strong> (priority 1): <code>xQueueReceive</code> blocks → format → UART TX
+      </div>
       <div class="arch-files">main.c · tasks_vitals.c</div>
     </div>
-    <div class="arch-arrow">↓ calls only layer below</div>
-    <div class="arch-layer">
-      <div class="arch-label proc">Processing</div>
-      <div class="arch-desc">Moving average: 8-sample circular buffer, O(1) per sample. BPM: dynamic threshold (midpoint of rolling min/max), rising-edge crossing, 333 ms refractory.</div>
+    <div class="arch-arrow">↓ calls only the layer below</div>
+    <div class="arch-layer proc">
+      <div class="arch-tag">Processing</div>
+      <div class="arch-detail">
+        Moving average: 8-sample circular buffer, O(1) update, O(1) query, partial-window division until buffer fills.<br>
+        BPM: dynamic threshold (midpoint of rolling min/max, 16-sample history), rising-edge, 333&nbsp;ms refractory. Unsigned subtraction handles tick counter wraparound by design.
+      </div>
       <div class="arch-files">filter.c · bpm.c</div>
     </div>
-    <div class="arch-arrow">↓ calls only layer below</div>
-    <div class="arch-layer">
-      <div class="arch-label drv">Driver</div>
-      <div class="arch-desc">CMSIS register access only. UART, I2C, TMP117, MAX30102, IWDG. No calls upward. No malloc.</div>
+    <div class="arch-arrow">↓ calls only the layer below</div>
+    <div class="arch-layer drv">
+      <div class="arch-tag">Driver</div>
+      <div class="arch-detail">
+        CMSIS struct access only. No raw hex addresses. No calls upward.<br>
+        USART2 · I2C1 (100 kHz, PB8/PB9 open-drain) · TMP117 · MAX30102 · IWDG (LSI oscillator + write-order sequence)
+      </div>
       <div class="arch-files">uart · i2c · tmp117 · max30102 · iwdg</div>
     </div>
   </div>
 
-  <p style="font-size:12px; color:var(--muted); margin-top:16px;">
-    <strong style="color:var(--phosphor-dim)">Authored:</strong> uart.c · i2c.c · tmp117.c · max30102.c · iwdg.c · filter.c · bpm.c · main.c · tasks_vitals.c<br>
-    <strong style="color:var(--phosphor-dim)">IDE-generated stubs (unchanged):</strong> syscalls.c · sysmem.c - newlib bare-metal stubs required by arm-none-eabi linker
+  <p class="arch-note">
+    <strong>Authored:</strong> uart.c · i2c.c · tmp117.c · max30102.c · iwdg.c · filter.c · bpm.c · main.c · tasks_vitals.c (nine files, 692 lines total). <code>syscalls.c</code> / <code>sysmem.c</code> are IDE-generated newlib stubs for arm-none-eabi, retained unchanged. Application code allocates zero bytes at runtime. FreeRTOS <code>heap_4</code> is the only allocator, used by the kernel for task stacks and the queue at startup. After <code>vTaskStartScheduler()</code>, the heap is frozen.
   </p>
+
+  <div class="gotcha-block">
+    <div class="gotcha-label">Two things not in any tutorial</div>
+    <div class="gotcha-item">
+      <span class="gi-num">1</span>
+      <span><code>CPACR</code> must enable CP10 and CP11 before <code>vTaskStartScheduler()</code>. Set it after, and the first floating-point operation inside a task corrupts the saved context. The crash is delayed and looks like data corruption.</span>
+    </div>
+    <div class="gotcha-item">
+      <span class="gi-num">2</span>
+      <span>FreeRTOS owns <code>SysTick_Handler</code>. After the scheduler starts, application code reading <code>SysTick-&gt;VAL</code> for timing is reading a register the kernel is actively writing. <code>bpm.c</code> uses <code>xTaskGetTickCount()</code>. Unsigned subtraction handles the 32-bit tick counter wraparound without a branch.</span>
+    </div>
+  </div>
 </div>
 </div>
 
-<!-- ── PROGRESS ── -->
+<!-- ── §04 REGISTER MAP ── -->
 <div class="wrap">
-<div class="section" id="progress">
-  <div class="section-marker"><h2>Build log</h2></div>
+<div class="section reveal">
+  <div class="section-header">
+    <div>
+      <div class="section-tag">§ 04 · Register map</div>
+      <h2>CMSIS access</h2>
+    </div>
+    <p class="section-note">
+      All access through <code>stm32l476xx.h</code> (STMicroelectronics/cmsis-device-l4). The compiler resolves struct offsets from RM0351. <code>grep -r "0x4[0-9A-F]{7}" firmware/Core/Src/</code> returns zero matches.
+    </p>
+  </div>
 
-  <div class="milestones">
-    <div class="ms ms-phase">
-      <span class="ms-phase-label">PHASE 1</span>
-      <div class="ms-body"><p class="ms-phase-desc">Sensors, drivers, signal processing, 3-layer refactor. Register-level, no HAL.</p></div>
+  <div class="reg-wrap">
+    <table class="regs">
+      <thead>
+        <tr>
+          <th>Register</th>
+          <th>CMSIS access</th>
+          <th>Bits / value</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="group-rcc">
+          <td class="rn"><span class="ptag pt-rcc">RCC</span>AHB2ENR</td>
+          <td class="ra">RCC-&gt;AHB2ENR</td>
+          <td class="rb">GPIOAEN · GPIOBEN</td>
+          <td class="rno">Clock enable before any GPIO access</td>
+        </tr>
+        <tr>
+          <td class="rn"><span class="ptag pt-rcc">RCC</span>APB1ENR1</td>
+          <td class="ra">RCC-&gt;APB1ENR1</td>
+          <td class="rb">bit 17 = USART2 · bit 21 = I2C1</td>
+          <td class="rno"></td>
+        </tr>
+        <tr>
+          <td class="rn"><span class="ptag pt-rcc">RCC</span>CSR</td>
+          <td class="ra">RCC-&gt;CSR</td>
+          <td class="rb">LSION · LSIRDY</td>
+          <td class="rc">LSI must be ready before IWDG config (see bug 01)</td>
+        </tr>
+        <tr>
+          <td class="rn"><span class="ptag pt-gpio">GPIO</span>A MODER</td>
+          <td class="ra">GPIOA-&gt;MODER</td>
+          <td class="rb">bits 5:4 = PA2 AF mode</td>
+          <td class="rno">10 = AF, AF7 = USART2_TX via AFR[0]</td>
+        </tr>
+        <tr>
+          <td class="rn"><span class="ptag pt-gpio">GPIO</span>B OTYPER</td>
+          <td class="ra">GPIOB-&gt;OTYPER</td>
+          <td class="rb">bits 8,9 = PB8, PB9 open-drain</td>
+          <td class="rno">I2C requires open-drain on both SDA and SCL</td>
+        </tr>
+        <tr>
+          <td class="rn"><span class="ptag pt-gpio">GPIO</span>B AFR[1]</td>
+          <td class="ra">GPIOB-&gt;AFR[1]</td>
+          <td class="rb">PB8, PB9 → AF4 = I2C1</td>
+          <td class="rno">AFRH register</td>
+        </tr>
+        <tr>
+          <td class="rn"><span class="ptag pt-usr">USRT</span>2 BRR</td>
+          <td class="ra">USART2-&gt;BRR</td>
+          <td class="rb">417 = 9600 baud at 4 MHz MSI</td>
+          <td class="rc">Bug 02: was 0x4000440C (CR3). CMSIS eliminates the risk.</td>
+        </tr>
+        <tr>
+          <td class="rn"><span class="ptag pt-usr">USRT</span>2 ISR</td>
+          <td class="ra">USART2-&gt;ISR</td>
+          <td class="rb">USART_ISR_TXE = bit 7</td>
+          <td class="rno">Poll before each TDR write</td>
+        </tr>
+        <tr>
+          <td class="rn"><span class="ptag pt-i2c">I2C1</span>TIMINGR</td>
+          <td class="ra">I2C1-&gt;TIMINGR</td>
+          <td class="rb">0x00100D14</td>
+          <td class="rno">100 kHz standard mode at 4 MHz MSI</td>
+        </tr>
+        <tr>
+          <td class="rn"><span class="ptag pt-iwd">IWDG</span>KR</td>
+          <td class="ra">IWDG-&gt;KR</td>
+          <td class="rb">0xCCCC start · 0x5555 unlock · 0xAAAA kick</td>
+          <td class="rc">0xCCCC before 0x5555. Order is not optional (bug 01).</td>
+        </tr>
+        <tr>
+          <td class="rn"><span class="ptag pt-iwd">IWDG</span>PR</td>
+          <td class="ra">IWDG-&gt;PR</td>
+          <td class="rb">0x03 = prescaler /32</td>
+          <td class="rno">32 kHz LSI / 32 = 1 ms per tick</td>
+        </tr>
+        <tr>
+          <td class="rn"><span class="ptag pt-iwd">IWDG</span>RLR</td>
+          <td class="ra">IWDG-&gt;RLR</td>
+          <td class="rb">0xFA0 = 4000 ticks</td>
+          <td class="rno">4 s timeout, kicked every 500 ms by task_sensor</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- ── §05 BUILD LOG ── -->
+<div class="wrap" id="progress">
+<div class="section reveal">
+  <div class="section-header">
+    <div>
+      <div class="section-tag">§ 05 · Build log</div>
+      <h2>Four phases</h2>
     </div>
-    <div class="ms">
-      <span class="ms-tick done">✓ DONE</span>
-      <div class="ms-body">
-        <div class="ms-title">LED blink - first register write</div>
-        <p class="ms-desc">RCC_AHB2ENR - GPIOA_MODER - GPIOA_ODR. LD2 at 1Hz. No HAL involved anywhere.</p>
+    <p class="section-note">
+      Sixty-three commits, four phases, May&nbsp;2025 to May&nbsp;2026. Each phase ends with a hardware verification run, not a checkbox. The commit history preserves the full prototype-to-RTOS evolution.
+    </p>
+  </div>
+
+  <div class="spec-grid">
+    <div class="spec-cell">
+      <div class="spec-label">MCU</div>
+      <div class="spec-val sm">STM32L476RG · Cortex-M4F</div>
+    </div>
+    <div class="spec-cell">
+      <div class="spec-label">Clock</div>
+      <div class="spec-val">4 MHz MSI</div>
+    </div>
+    <div class="spec-cell">
+      <div class="spec-label">RTOS</div>
+      <div class="spec-val sm">FreeRTOS V10.5.1</div>
+    </div>
+    <div class="spec-cell">
+      <div class="spec-label">HAL</div>
+      <div class="spec-val">None</div>
+    </div>
+    <div class="spec-cell">
+      <div class="spec-label">Sensors</div>
+      <div class="spec-val sm">TMP117 + MAX30102</div>
+    </div>
+    <div class="spec-cell">
+      <div class="spec-label">Commits</div>
+      <div class="spec-val">63</div>
+    </div>
+  </div>
+
+  <div class="timeline">
+    <div class="phase-header">
+      <span class="phase-chip">Phase 1</span>
+      <span class="phase-desc">Foundation: UART, GPIO, SysTick. First register writes. No libraries.</span>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot done"></div>
+      <span class="tl-check">done</span>
+      <div class="tl-body">
+        <div class="tl-title">LED blink: first register write</div>
+        <p class="tl-desc">RCC_AHB2ENR, GPIOA_MODER, GPIOA_ODR. LD2 at 1&nbsp;Hz. No HAL anywhere.</p>
       </div>
     </div>
-    <div class="ms">
-      <span class="ms-tick done">✓ DONE</span>
-      <div class="ms-body">
-        <div class="ms-title">UART - COM7 · 9600 baud</div>
-        <p class="ms-desc">PA2 - AF7. USART2 configured bare-metal. BRR address bug found and documented. Clean output in CoolTerm.</p>
+    <div class="tl-item">
+      <div class="tl-dot done"></div>
+      <span class="tl-check">done</span>
+      <div class="tl-body">
+        <div class="tl-title">UART: COM7, 9600 baud</div>
+        <p class="tl-desc">PA2, AF7, USART2. BRR offset bug found and documented. Clean output in CoolTerm.</p>
       </div>
     </div>
-    <div class="ms">
-      <span class="ms-tick done">✓ DONE</span>
-      <div class="ms-body">
-        <div class="ms-title">I2C scanner - both devices found</div>
-        <p class="ms-desc">TMP117 at 0x49, MAX30102 at 0x57. Both responding on I2C1 bus on PB8 and PB9.</p>
+
+    <div class="phase-header">
+      <span class="phase-chip">Phase 2</span>
+      <span class="phase-desc">Sensor drivers: I2C, TMP117, MAX30102, 3-layer refactor.</span>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot done"></div>
+      <span class="tl-check">done</span>
+      <div class="tl-body">
+        <div class="tl-title">I2C scanner: both devices found</div>
+        <p class="tl-desc">TMP117 at 0x49, MAX30102 at 0x57. Both responding on I2C1 (PB8/PB9).</p>
       </div>
     </div>
-    <div class="ms">
-      <span class="ms-tick done">✓ DONE</span>
-      <div class="ms-body">
-        <div class="ms-title">TMP117 temperature driver</div>
-        <p class="ms-desc">Device ID 0x0117 verified. Temperature register read. 23.5 C over UART. 0.0078125 C per LSB resolution.</p>
+    <div class="tl-item">
+      <div class="tl-dot done"></div>
+      <span class="tl-check">done</span>
+      <div class="tl-body">
+        <div class="tl-title">TMP117 temperature driver</div>
+        <p class="tl-desc">Device ID 0x0117 verified. Temperature read. 23.5&nbsp;°C over UART. 7.8125&nbsp;m°C/LSB.</p>
       </div>
     </div>
-    <div class="ms">
-      <span class="ms-tick done">✓ DONE</span>
-      <div class="ms-body">
-        <div class="ms-title">MAX30102 driver + raw IR data</div>
-        <p class="ms-desc">Part ID 0x15 verified. HR mode configured. FIFO streaming. Values climb from ~700 ambient to 92000+ with finger contact.</p>
+    <div class="tl-item">
+      <div class="tl-dot done"></div>
+      <span class="tl-check">done</span>
+      <div class="tl-body">
+        <div class="tl-title">MAX30102 driver + raw IR data</div>
+        <p class="tl-desc">Part ID 0x15. HR mode, FIFO streaming. ~775 ambient, ~87&thinsp;000 with finger.</p>
       </div>
     </div>
-    <div class="ms">
-      <span class="ms-tick done">✓ DONE</span>
-      <div class="ms-body">
-        <div class="ms-title">Both sensors combined + moving average filter</div>
-        <p class="ms-desc">Temperature, raw IR, and filtered IR in one loop. Circular buffer window=8. Filter smoothing and decay visible in terminal output.</p>
+    <div class="tl-item">
+      <div class="tl-dot done"></div>
+      <span class="tl-check">done</span>
+      <div class="tl-body">
+        <div class="tl-title">Refactor to 3-layer architecture</div>
+        <p class="tl-desc">Monolithic main.c split into driver, processing, and application layers. Zero compile errors on first build after refactor.</p>
       </div>
     </div>
-    <div class="ms">
-      <span class="ms-tick done">✓ DONE</span>
-      <div class="ms-body">
-        <div class="ms-title">Refactor to 3-layer architecture</div>
-        <p class="ms-desc">Monolithic main.c split into driver, processing, and application layers. Zero errors on first compile after refactor. Git history preserves the full prototype-to-architecture evolution.</p>
+
+    <div class="phase-header">
+      <span class="phase-chip">Phase 3</span>
+      <span class="phase-desc">Signal processing: moving average, BPM detection, MISRA-C analysis.</span>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot done"></div>
+      <span class="tl-check">done</span>
+      <div class="tl-body">
+        <div class="tl-title">SysTick + moving average filter</div>
+        <p class="tl-desc">SysTick at 1&nbsp;ms. delay_ms() replaces busy-wait. 8-sample circular buffer IR filter. Ramp-up and decay visible in terminal output.</p>
       </div>
     </div>
-    <div class="ms ms-phase">
-      <span class="ms-phase-label">PHASE 2</span>
-      <div class="ms-body"><p class="ms-phase-desc">Hardware quality - calibrated timing, watchdog reliability.</p></div>
-    </div>
-    <div class="ms">
-      <span class="ms-tick done">✓ DONE</span>
-      <div class="ms-body">
-        <div class="ms-title">SysTick calibrated delay + IWDG watchdog</div>
-        <p class="ms-desc">SysTick configured for 1 ms tick. Calibrated delay_ms() replaces busy-wait loop. IWDG with 4-second timeout using LSI oscillator. LSI must be enabled and LSIRDY confirmed before IWDG config - got this wrong first, debugged with GDB.</p>
+    <div class="tl-item">
+      <div class="tl-dot done"></div>
+      <span class="tl-check">done</span>
+      <div class="tl-body">
+        <div class="tl-title">BPM detection from PPG signal</div>
+        <p class="tl-desc">Dynamic threshold: midpoint of rolling min/max (16-sample history). Rising-edge, 333&nbsp;ms refractory. BPM = 60000 / interval_ms. Shows --- until two crossings confirmed. Verified 119&nbsp;BPM on hardware. MISRA-C pass with Cppcheck: 136 initial findings, 46 fixed, 76 justified.</p>
       </div>
     </div>
-    <div class="ms ms-phase">
-      <span class="ms-phase-label">PHASE 3</span>
-      <div class="ms-body"><p class="ms-phase-desc">Signal processing - BPM from raw PPG data.</p></div>
+
+    <div class="phase-header">
+      <span class="phase-chip">Phase 4</span>
+      <span class="phase-desc">FreeRTOS + IWDG + CMSIS migration. Hardware verified.</span>
     </div>
-    <div class="ms">
-      <span class="ms-tick done">✓ DONE</span>
-      <div class="ms-body">
-        <div class="ms-title">BPM detection from PPG signal</div>
-        <p class="ms-desc">Dynamic threshold: midpoint of rolling min/max over 16-sample history window. Rising-edge crossing detection with 333 ms refractory period. BPM = 60000 / interval_ms. Shows --- until two crossings confirmed, then live reading. Verified 119 BPM on hardware.</p>
-      </div>
-    </div>
-    <div class="ms ms-phase">
-      <span class="ms-phase-label">PHASE 4</span>
-      <div class="ms-body"><p class="ms-phase-desc">RTOS integration - FreeRTOS task scheduling verified on hardware.</p></div>
-    </div>
-    <div class="ms">
-      <span class="ms-tick done">✓ DONE</span>
-      <div class="ms-body">
-        <div class="ms-title">FreeRTOS V10.5.1 · two-task architecture</div>
-        <p class="ms-desc">ARM_CM4F port. FPU context enabled before vTaskStartScheduler (CPACR write required). task_sensor (priority 2) + task_uart (priority 1) communicate via depth-1 queue - xQueueOverwrite / xQueueReceive. IWDG kicked every 500 ms inside task_sensor. Peripheral drivers migrated to CMSIS device headers (stm32l476xx.h). Verified on hardware: TMP117 25.3 C, IR ~87000 finger contact, BPM 119. No watchdog resets during continuous run.</p>
+    <div class="tl-item">
+      <div class="tl-dot done"></div>
+      <span class="tl-check">done</span>
+      <div class="tl-body">
+        <div class="tl-title">FreeRTOS V10.5.1: two-task architecture</div>
+        <p class="tl-desc">ARM_CM4F port. FPU context enabled before vTaskStartScheduler (CPACR write). task_sensor (priority 2) + task_uart (priority 1) communicate via depth-1 queue. IWDG 4&nbsp;s timeout kicked every 500&nbsp;ms. Full CMSIS migration eliminates all raw hex addresses. Hardware verified: 25.3&nbsp;°C, IR ~87&thinsp;000, BPM&nbsp;119 stable 50+ rows. Zero watchdog resets. 15 host-gcc unit tests added for filter.c and bpm.c.</p>
       </div>
     </div>
   </div>
 </div>
 </div>
 
-<div class="footer-bar">
-  <span>Vaibhav Aher · M.Sc. ICT · FAU Erlangen · 2026</span>
+<footer>
+  <span>Vaibhav Aher · M.Sc. ICT · FAU Erlangen-Nürnberg · 2026</span>
   <div class="footer-links">
-    <a href="https://github.com/VaibhavAher100/stm32-vitals-monitor">GitHub</a>
-    <a href="https://github.com/VaibhavAher100">Profile</a>
+    <a href="https://github.com/VaibhavAher100/stm32-vitals-monitor" target="_blank">GitHub</a>
+    <a href="https://github.com/VaibhavAher100" target="_blank">Profile</a>
     <a href="https://vaibhavaher100.github.io/rpi-object-orientation-tracker/">RPi project</a>
   </div>
-</div>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 50);
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.06 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
 </body>
 </html>

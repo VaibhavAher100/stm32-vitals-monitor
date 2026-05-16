@@ -56,20 +56,23 @@ cppcheck --addon=misra.py --enable=style,warning,performance,portability
 | 11.4 | 26 | 26 | Justified deviation |
 | 12.2 | 43 | 43 | Justified deviation |
 | 13.3 | 1 | 1 | Justified deviation |
-| 13.5 | 22 | 22 | Justified deviation |
+| 13.5 | 22 | 0  | Eliminated — timeout loop pattern changed to `while(...&&(timeout>0U)){timeout--;}` |
 | 14.4 | 6 | 2 | Justified deviation (4 eliminated as side-effect of fixes) |
 | 15.5 | 4 | 4 | Justified deviation |
 | 10.4 | 5 | 0 | Fixed |
 | 15.6 | 11 | 0 | Fixed |
-| 17.7 | 8 | 0 | Fixed |
-| 17.8 | 6 | 0 | Fixed |
-| 5.9  | 3 | 0 | Fixed |
+| 17.7 | 8 | 0 | Fixed (original 8) + 4 new findings fixed (xTaskCreate×2, xQueueOverwrite, xQueueReceive) |
+| 17.8 | 6 | 0 | Fixed — `busy_delay_ms` regression in `i2c.c`/`max30102.c` also fixed (renamed `i2c_busy_delay_ms`, removed from `max30102.c`) |
+| 5.9  | 3 | 0 | Fixed — `busy_delay_ms` duplication regression fixed: removed from `max30102.c`, renamed in `i2c.c` |
 | 8.7  | 1 | 0 | Fixed (uart_hex removed) |
+| 10.3 | 1 | 0 | Fixed — RXDR narrowing cast in `i2c_read_2bytes`: `(uint16_t)((uint16_t)(I2C1->RXDR & 0xFFU) << 8U)` |
 
-**Total: 136 findings. 38 fixed. 98 justified deviations.**
+**Total: 136 original + 8 new findings. 46 fixed. 76 justified deviations. Rule 13.5 eliminated.**
 
 Post-fix cppcheck re-run confirmed: 98 violations, all in justified categories.
 Rules 10.4, 15.6, 17.7, 17.8, 5.9, 8.7 no longer appear in output.
+
+**May 2026 fixes (post-review):** Rules 13.5 (22 findings eliminated), 17.7 (4 new fixed), 17.8 regression fixed, 5.9 regression fixed, 10.3 (1 new fixed).
 
 ---
 
@@ -153,34 +156,26 @@ and the output is verified by TC-01.
 
 ---
 
-### Rule 13.5 — Side effects in the right-hand side of `&&` or `||` (22 findings)
+### Rule 13.5 — Side effects in the right-hand side of `&&` or `||` (22 findings — FIXED)
 
-**Status on current CMSIS codebase:** Still present. `while(... && timeout--)` polling pattern unchanged in `i2c.c`.
+**Status:** Eliminated. All I2C timeout loops refactored to separate decrement from condition.
 
-**Location:** I2C polling loops in `i2c.c` and `max30102.c`.
+**Fix applied (May 2026):** Every `while(... && timeout--)` pattern replaced with
+`while(... && (timeout > 0U)) { timeout--; }`. This also fixed a latent bug: the
+original post-decrement caused `timeout` to wrap to `UINT32_MAX` on expiry, making
+every `if (!timeout)` error check dead code. The refactored form correctly leaves
+`timeout == 0U` on expiry, making all error paths reachable.
 
 **Example:**
 ```c
-timeout = 50000;
-while(!(I2C1_ISR & (1U << 1)) && timeout--) {}
+/* Before — Rule 13.5 violation AND broken error detection */
+while(!(I2C1->ISR & I2C_ISR_TXIS) && timeout--) {}
+if (!timeout) { return 0U; }   /* DEAD CODE: timeout was UINT32_MAX, not 0 */
+
+/* After — compliant and correct */
+while(!(I2C1->ISR & I2C_ISR_TXIS) && (timeout > 0U)) { timeout--; }
+if (timeout == 0U) { return 0U; }
 ```
-
-**Deviation rationale:**
-This is the standard pattern for I2C polling with timeout in bare-metal embedded
-firmware. The `timeout--` side effect is deliberate and its behaviour is
-well-defined: C evaluates `&&` left-to-right with short-circuit semantics, so
-`timeout--` executes only when the left condition is true (the hardware flag
-has not yet been set). When the flag is set, the loop exits before `timeout--`
-fires.
-
-The alternative — a separate decrement inside the loop body — requires more
-lines, an additional `if(!timeout) break;` statement, and makes the timeout
-intent less clear. In a safety-critical production context, the refactored
-form would be preferred. For this project, the pattern is acceptable and is
-consistent across all I2C transactions.
-
-**Risk assessment:** Low. Timeout limits the maximum blocking time to 50000
-cycles per polling loop. Documented as a known limitation in `docs/limitations.md`.
 
 ---
 

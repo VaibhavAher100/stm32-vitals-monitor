@@ -40,9 +40,9 @@ int main(void)
 
     /* Depth-1 queue: sensor overwrites stale reading if UART is slow */
     vitals_queue = xQueueCreate(1U, sizeof(VitalsMsg));
-
-    xTaskCreate(task_sensor, "Sensor", 256U, NULL, 2U, NULL);
-    xTaskCreate(task_uart,   "UART",   256U, NULL, 1U, NULL);
+    configASSERT(vitals_queue != NULL);
+    configASSERT(xTaskCreate(task_sensor, "Sensor", 256U, NULL, 2U, NULL) == pdPASS);
+    configASSERT(xTaskCreate(task_uart,   "UART",   256U, NULL, 1U, NULL) == pdPASS);
 
     vTaskStartScheduler();
 

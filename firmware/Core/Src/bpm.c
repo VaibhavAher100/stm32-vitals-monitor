@@ -69,7 +69,7 @@ void bpm_update(BpmDetector *b, uint32_t ir_filt)
             b->cross_count   = 1U;
         } else {
             uint32_t elapsed = now - b->last_cross_ms; /* unsigned subtraction handles tick rollover */
-            if (elapsed >= BPM_REFRACTORY_MS) {
+            if (elapsed >= pdMS_TO_TICKS(BPM_REFRACTORY_MS)) {
                 b->interval_ms   = elapsed;
                 b->last_cross_ms = now;
                 if (b->cross_count < 255U) {
@@ -84,7 +84,17 @@ void bpm_update(BpmDetector *b, uint32_t ir_filt)
 
 uint32_t bpm_get(const BpmDetector *b)
 {
+    uint32_t bpm;
+    uint32_t interval_ms;
+
     if (b->cross_count < 2U) { return BPM_INVALID; }
     if (b->interval_ms == 0U) { return BPM_INVALID; }
-    return 60000U / b->interval_ms;
+
+    /* interval_ms stores ticks; convert to ms using portTICK_PERIOD_MS */
+    interval_ms = b->interval_ms * (uint32_t)portTICK_PERIOD_MS;
+    if (interval_ms == 0U) { return BPM_INVALID; }
+
+    bpm = 60000U / interval_ms;
+    if ((bpm < 30U) || (bpm > 200U)) { return BPM_INVALID; }
+    return bpm;
 }

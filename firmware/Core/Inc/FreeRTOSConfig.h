@@ -38,10 +38,18 @@
 #define xPortPendSVHandler  PendSV_Handler
 #define xPortSysTickHandler SysTick_Handler
 
+/* Stack overflow detection — mode 2 checks stack canary on every context switch */
+#define configCHECK_FOR_STACK_OVERFLOW      2
+
+/* Trap on assertion failure — IWDG fires after 4 s */
+#define configASSERT(x) \
+    do { if ((x) == 0) { taskDISABLE_INTERRUPTS(); for(;;){} } } while(0)
+
 /* Optional API includes */
 #define INCLUDE_vTaskDelay                  1
 #define INCLUDE_vTaskDelete                 0
 #define INCLUDE_vTaskSuspend                0
 #define INCLUDE_xTaskGetCurrentTaskHandle   1
+#define INCLUDE_uxTaskGetStackHighWaterMark 1
 
 #endif /* FREERTOS_CONFIG_H */

@@ -38,16 +38,17 @@ void task_sensor(void *arg)
     (void)arg;
 
     /* Sensor init runs here — after scheduler start, so vTaskDelay() is safe */
-    if(tmp117_init()) {
-        uart_str("TMP117   OK\r\n");
-    } else {
-        uart_str("TMP117   FAIL\r\n");
-    }
+    {
+        uint8_t tmp_ok = tmp117_init();
+        uint8_t max_ok = max30102_init();
 
-    if(max30102_init()) {
-        uart_str("MAX30102 OK\r\n");
-    } else {
-        uart_str("MAX30102 FAIL\r\n");
+        uart_str(tmp_ok != 0U ? "TMP117   OK\r\n" : "TMP117   FAIL\r\n");
+        uart_str(max_ok != 0U ? "MAX30102 OK\r\n" : "MAX30102 FAIL\r\n");
+
+        /* Both sensors required — starve IWDG on failure to force a reset */
+        if ((tmp_ok == 0U) || (max_ok == 0U)) {
+            for(;;) {}
+        }
     }
 
     uart_str("========================\r\n");
@@ -67,7 +68,7 @@ void task_sensor(void *arg)
         msg.bpm = bpm_get(&bpm);
 
         /* Overwrite old item if not yet consumed — depth-1 queue */
-        xQueueOverwrite(vitals_queue, &msg);
+        (void)xQueueOverwrite(vitals_queue, &msg);
 
         iwdg_kick();
         vTaskDelay(pdMS_TO_TICKS(500U));
@@ -87,11 +88,18 @@ void task_uart(void *arg)
 
     for(;;)
     {
-        xQueueReceive(vitals_queue, &msg, portMAX_DELAY);
+        (void)xQueueReceive(vitals_queue, &msg, portMAX_DELAY);
 
-        uart_int(msg.temp_x10 / 10);
-        uart_char('.');
-        uart_int(msg.temp_x10 % 10);
+        if (msg.temp_x10 < 0) {
+            uart_char('-');
+            uart_int(-(msg.temp_x10 / 10));
+            uart_char('.');
+            uart_int(-(msg.temp_x10 % 10));
+        } else {
+            uart_int(msg.temp_x10 / 10);
+            uart_char('.');
+            uart_int(msg.temp_x10 % 10);
+        }
         uart_str("       | ");
         uart_int((int32_t)msg.ir_raw);
         uart_str("  | ");
@@ -104,4 +112,13 @@ void task_uart(void *arg)
         }
         uart_str("\r\n");
     }
+}
+
+/* Called by FreeRTOS when configCHECK_FOR_STACK_OVERFLOW detects overflow.
+   Spin here — IWDG fires after 4 s and forces a reset. */
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+    (void)xTask;
+    (void)pcTaskName;
+    for(;;) {}
 }

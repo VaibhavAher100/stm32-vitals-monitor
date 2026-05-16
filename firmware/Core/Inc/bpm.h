@@ -17,8 +17,8 @@ typedef struct {
     uint8_t  hist_idx;             /* next write position in history[]           */
     uint8_t  hist_count;           /* samples accumulated (saturates at BPM_HISTORY) */
     uint32_t prev_val;             /* filtered IR from previous call             */
-    uint32_t last_cross_ms;        /* get_tick() at last threshold crossing      */
-    uint32_t interval_ms;          /* ms between the two most recent crossings   */
+    uint32_t last_cross_ms;        /* xTaskGetTickCount() at last threshold crossing (ticks, not ms) */
+    uint32_t interval_ms;          /* ticks between two most recent crossings — bpm_get converts via portTICK_PERIOD_MS */
     uint8_t  cross_count;          /* number of valid crossings seen so far      */
 } BpmDetector;
 

@@ -20,6 +20,26 @@
 			<type>2</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Middlewares/FreeRTOS/Source/portable/MemMang</locationURI>
 		</link>
+		<link>
+			<name>Middlewares/SEGGER/RTT</name>
+			<type>2</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Middlewares/SEGGER/RTT</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/SEGGER/SYSVIEW</name>
+			<type>2</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Middlewares/SEGGER/SYSVIEW</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/SEGGER/Config</name>
+			<type>2</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Middlewares/SEGGER/Config</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/SEGGER/Sample</name>
+			<type>2</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Middlewares/SEGGER/Sample</locationURI>
+		</link>
 	</linkedResources>
 	<buildSpec>
 		<buildCommand>

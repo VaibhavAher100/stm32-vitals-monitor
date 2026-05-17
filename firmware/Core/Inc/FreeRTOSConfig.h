@@ -12,7 +12,7 @@
 #define configMINIMAL_STACK_SIZE                256U
 #define configTOTAL_HEAP_SIZE                   16384U
 #define configMAX_TASK_NAME_LEN                 8U
-#define configUSE_TRACE_FACILITY                0
+#define configUSE_TRACE_FACILITY                1
 #define configUSE_16_BIT_TICKS                  0
 #define configIDLE_SHOULD_YIELD                 1
 #define configUSE_MUTEXES                       1
@@ -51,5 +51,9 @@
 #define INCLUDE_vTaskSuspend                0
 #define INCLUDE_xTaskGetCurrentTaskHandle   1
 #define INCLUDE_uxTaskGetStackHighWaterMark 1
+#define INCLUDE_xTaskGetIdleTaskHandle      1
+#define INCLUDE_pxTaskGetStackStart         1
+
+#include "SEGGER_SYSVIEW_FreeRTOS.h"
 
 #endif /* FREERTOS_CONFIG_H */

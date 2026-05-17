@@ -15,9 +15,11 @@
  * after the scheduler starts, so vTaskDelay() is safe to call.
  */
 
+#define USE_LEGACY_TRACE_API  1
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
+#include "SEGGER_SYSVIEW.h"
 
 #include "tasks_vitals.h"
 #include "iwdg.h"
@@ -44,6 +46,7 @@ int main(void)
     configASSERT(xTaskCreate(task_sensor, "Sensor", 256U, NULL, 2U, NULL) == pdPASS);
     configASSERT(xTaskCreate(task_uart,   "UART",   256U, NULL, 1U, NULL) == pdPASS);
 
+    traceSTART();
     vTaskStartScheduler();
 
     /* Never reached */

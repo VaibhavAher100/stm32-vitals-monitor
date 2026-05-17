@@ -406,13 +406,16 @@ clinical measurement.
 - BPM column behaves identically to Phase 3.
 - No hang or unexpected reset (IWDG kicked inside task loop before `vTaskDelay`).
 
-**Actual result:** Startup banner appeared immediately after flash. `TMP117 OK` and
-`MAX30102 OK` printed once scheduler started and `task_sensor` entered its init
-block. Measurement rows appeared at ~500 ms intervals. BPM column showed `---`
-for the first rows while the history window filled, then settled to
-119 BPM with finger on sensor. Ambient IR ~1000, finger IR ~86000. No hangs or
-unexpected resets observed during the run. IWDG kicked every 500 ms by
+**Actual result (April 2026 Phase 4 initial run, LED 0x10 / 3.2 mA):** Startup banner
+appeared immediately after flash. `TMP117 OK` and `MAX30102 OK` printed once scheduler
+started and `task_sensor` entered its init block. Measurement rows appeared at ~500 ms
+intervals. BPM column showed `---` for the first rows while the history window filled,
+then settled to 119 BPM with finger on sensor. Ambient IR ~1000, finger IR ~86000. No
+hangs or unexpected resets observed during the run. IWDG kicked every 500 ms by
 `task_sensor` as expected.
+
+**Note:** LED current was subsequently increased to 0x3F (12.6 mA). May 2026 re-run
+results (IR ~196,000, BPM 64-97) are documented in TC-12.
 
 **Status: PASS**
 

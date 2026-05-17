@@ -41,31 +41,13 @@ cppcheck --dump --std=c99 -DSTM32L476xx --suppress=missingInclude
 python misra.py --no-summary firmware/Core/Src/*.c.dump
 ```
 
-Command for re-run on current CMSIS codebase (pending):
-
-```
-cppcheck --addon=misra.py --enable=style,warning,performance,portability
-         --std=c99 --platform=arm32-wchar_t2
-         --suppress=missingInclude --suppress=missingIncludeSystem
-         -I firmware/Core/Inc
-         -I firmware/Drivers/CMSIS/Device/ST/STM32L4xx/Include
-         -I firmware/Drivers/CMSIS/Include
-         -I firmware/Middlewares/FreeRTOS/Source/include
-         -I firmware/Middlewares/FreeRTOS/Source/portable/GCC/ARM_CM4F
-         firmware/Core/Src/main.c firmware/Core/Src/filter.c
-         firmware/Core/Src/uart.c firmware/Core/Src/i2c.c
-         firmware/Core/Src/tmp117.c firmware/Core/Src/max30102.c
-         firmware/Core/Src/tasks_vitals.c firmware/Core/Src/bpm.c
-         firmware/Core/Src/iwdg.c
-```
-
 ---
 
 ## Summary
 
 | Rule | Original findings | Remaining | Disposition |
 |---|---|---|---|
-| 11.4 | 26 | 26 | Justified deviation |
+| 11.4 | 26 | 0 | Obsolete — CMSIS refactor eliminated all volatile pointer casts |
 | 12.2 | 43 | 43 | Justified deviation |
 | 13.3 | 1 | 1 | Justified deviation |
 | 13.5 | 22 | 0  | Eliminated — timeout loop pattern changed to `while(...&&(timeout>0U)){timeout--;}` |

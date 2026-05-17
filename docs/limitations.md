@@ -117,14 +117,18 @@ An RTC peripheral would be needed for wall-clock timestamps.
 
 ## Repository Limitations
 
-### Datasheets Not Included for Redistribution
+### Datasheets
 
-The STM32 Reference Manual (RM0351) and Nucleo User Manual (UM1724) are referenced
-in this project but not redistributed in this repository. They are freely available
-from STMicroelectronics at st.com.
+The following reference documents are tracked in `datasheets/` for local reference:
 
-The TMP117 and MAX30102 datasheets are referenced but not redistributed.
-They are available from Texas Instruments and Analog Devices respectively.
+- `RM0351_reference_manual.pdf` — STM32L4 Reference Manual (STMicroelectronics)
+- `STM32L476RG_datasheet.pdf` — STM32L476RG datasheet (STMicroelectronics)
+- `UM1724_nucleo_user_manual.pdf` — Nucleo-64 User Manual (STMicroelectronics)
+- `TMP117_datasheet.pdf` — TMP117 datasheet (Texas Instruments)
+- `MAX30102_datasheet.pdf` — MAX30102 datasheet (Analog Devices / Maxim)
+
+These documents are publicly available from their respective manufacturers and are
+included for convenience. They remain the intellectual property of their publishers.
 
 ---
 

@@ -562,13 +562,13 @@ footer { padding:40px 48px; display:flex; justify-content:space-between; align-i
   <div class="hero-content">
     <div class="hero-eyebrow">
       <div class="blink-dot"></div>
-      <span class="eyebrow-label">Hardware verified · Nucleo-L476RG · April 2026</span>
+      <span class="eyebrow-label">Hardware verified · Nucleo-L476RG · May 2026</span>
     </div>
 
     <h1>STM32<br><span class="accent">Vitals</span><br>Monitor</h1>
 
     <p class="hero-desc">
-      Bare-metal firmware on STM32L476RG, Cortex-M4F. No HAL, no CubeMX. Every peripheral driver is hand-written in register-level C through CMSIS structs. FreeRTOS V10.5.1, two tasks, one depth-1 queue, IWDG watchdog. 74 commits across four phases. Verified on hardware: BPM&nbsp;119 stable, 25.3&nbsp;°C on TMP117, zero IWDG resets over a 5-minute continuous run.
+      Bare-metal firmware on STM32L476RG, Cortex-M4F. No HAL, no CubeMX. Every peripheral driver is hand-written in register-level C through CMSIS structs. FreeRTOS V10.5.1, two tasks, one depth-1 queue, IWDG watchdog. 79 commits across four phases. Verified on hardware: BPM&nbsp;64-97 (resting adult), 25.6&nbsp;°C on TMP117, zero IWDG resets over a 5-minute continuous run.
     </p>
 
     <div class="verify-strip">
@@ -579,13 +579,13 @@ footer { padding:40px 48px; display:flex; justify-content:space-between; align-i
       </div>
       <div class="vl">
         <span class="vl-key">MAX30102 IR</span>
-        <span class="vl-val">~775 ambient · ~87&thinsp;000 finger</span>
+        <span class="vl-val">~1740 ambient · ~196&thinsp;000 finger</span>
         <span class="vl-note">· part ID 0x15 verified</span>
       </div>
       <div class="vl">
         <span class="vl-key">BPM</span>
-        <span class="vl-val">119 stable, 50+ rows</span>
-        <span class="vl-note">· refractory rejections visible in log</span>
+        <span class="vl-val">64-97 (resting adult)</span>
+        <span class="vl-note">· refractory rejections visible in log · 600&nbsp;ms refractory</span>
       </div>
       <div class="vl">
         <span class="vl-key">IWDG</span>
@@ -615,7 +615,7 @@ footer { padding:40px 48px; display:flex; justify-content:space-between; align-i
       <h2>Verified signal</h2>
     </div>
     <p class="section-note">
-      TMP117 at 0x49, MAX30102 at 0x57, both on I2C1 (PB8/PB9). The filter column shows the 8-sample window: raw jumps immediately on contact, filtered takes 8 rows to catch up. BPM locks after two threshold crossings. The last value holds when the finger is removed.
+      TMP117 at 0x49, MAX30102 at 0x57, both on I2C1 (PB8/PB9). The filter column shows the 4-sample window: raw jumps immediately on contact, filtered takes 4 rows to catch up. BPM locks after two threshold crossings. The last value holds when the finger is removed. Terminal captures below are from earlier Phase 3/4 runs (LED 0x10, 3.2&nbsp;mA); May 2026 re-verification at 0x3F (12.6&nbsp;mA) is in docs/testing.md TC-12.
     </p>
   </div>
 
@@ -623,7 +623,7 @@ footer { padding:40px 48px; display:flex; justify-content:space-between; align-i
     <div class="terminal-inset">
       <div class="term-bar">
         <span class="term-bar-label">COM7 · 9600 8-N-1 · ambient + filter ramp</span>
-        <span class="term-bar-meta">8-sample MA · O(1)</span>
+        <span class="term-bar-meta">4-sample MA · O(1)</span>
       </div>
       <div class="term-body">
         <div class="sr"><span class="thd">Temp(C)  | IR raw  | IR filt | BPM</span></div>
@@ -800,7 +800,7 @@ footer { padding:40px 48px; display:flex; justify-content:space-between; align-i
       <h2>Three layers, two tasks</h2>
     </div>
     <p class="section-note">
-      Two tasks, one queue, one watchdog. <code>task_sensor</code> reads TMP117 and MAX30102, runs the 8-sample moving average and dynamic-threshold BPM detector, writes one sample to a depth-1 queue with <code>xQueueOverwrite</code>, kicks the IWDG, and sleeps 500&nbsp;ms. <code>task_uart</code> blocks on <code>xQueueReceive</code>, formats, and transmits. The queue depth is one on purpose: UART is slower than the sensor, and stale readings are meant to be dropped.
+      Two tasks, one queue, one watchdog. <code>task_sensor</code> reads TMP117 and MAX30102, runs the 4-sample moving average and dynamic-threshold BPM detector, writes one sample to a depth-1 queue with <code>xQueueOverwrite</code>, kicks the IWDG, and sleeps 500&nbsp;ms. <code>task_uart</code> blocks on <code>xQueueReceive</code>, formats, and transmits. The queue depth is one on purpose: UART is slower than the sensor, and stale readings are meant to be dropped.
     </p>
   </div>
 
@@ -817,8 +817,8 @@ footer { padding:40px 48px; display:flex; justify-content:space-between; align-i
     <div class="arch-layer proc">
       <div class="arch-tag">Processing</div>
       <div class="arch-detail">
-        Moving average: 8-sample circular buffer, O(1) update, O(1) query, partial-window division until buffer fills.<br>
-        BPM: dynamic threshold (midpoint of rolling min/max, 16-sample history), rising-edge, 333&nbsp;ms refractory. Unsigned subtraction handles tick counter wraparound by design.
+        Moving average: 4-sample circular buffer, O(1) update, O(1) query, partial-window division until buffer fills.<br>
+        BPM: dynamic threshold (midpoint of rolling min/max, 16-sample history), rising-edge, 600&nbsp;ms refractory. Unsigned subtraction handles tick counter wraparound by design.
       </div>
       <div class="arch-files">filter.c · bpm.c</div>
     </div>
@@ -962,7 +962,7 @@ footer { padding:40px 48px; display:flex; justify-content:space-between; align-i
       <h2>Four phases</h2>
     </div>
     <p class="section-note">
-      74 commits across four phases, March to May 2026. Each phase ends with a hardware verification run, not a checkbox. The commit history preserves the full prototype-to-RTOS evolution.
+      79 commits across four phases, March to May 2026. Each phase ends with a hardware verification run, not a checkbox. The commit history preserves the full prototype-to-RTOS evolution.
     </p>
   </div>
 
@@ -1061,7 +1061,7 @@ footer { padding:40px 48px; display:flex; justify-content:space-between; align-i
       <span class="tl-check">done</span>
       <div class="tl-body">
         <div class="tl-title">SysTick + moving average filter</div>
-        <p class="tl-desc">SysTick at 1&nbsp;ms. delay_ms() replaces busy-wait. 8-sample circular buffer IR filter. Ramp-up and decay visible in terminal output.</p>
+        <p class="tl-desc">SysTick at 1&nbsp;ms. delay_ms() replaces busy-wait. 4-sample circular buffer IR filter. Ramp-up and decay visible in terminal output.</p>
       </div>
     </div>
     <div class="tl-item">
@@ -1069,7 +1069,7 @@ footer { padding:40px 48px; display:flex; justify-content:space-between; align-i
       <span class="tl-check">done</span>
       <div class="tl-body">
         <div class="tl-title">BPM detection from PPG signal</div>
-        <p class="tl-desc">Dynamic threshold: midpoint of rolling min/max (16-sample history). Rising-edge, 333&nbsp;ms refractory. BPM = 60000 / interval_ms. Shows --- until two crossings confirmed. Verified 119&nbsp;BPM on hardware. MISRA-C pass with Cppcheck: 136 initial findings, 46 fixed, 76 justified.</p>
+        <p class="tl-desc">Dynamic threshold: midpoint of rolling min/max (16-sample history). Rising-edge, 600&nbsp;ms refractory. BPM = 60000 / interval_ms. Shows --- until two crossings confirmed. Verified 64-97&nbsp;BPM on hardware (resting adult). MISRA-C pass with Cppcheck: 136 initial findings, 46 fixed, 76 justified.</p>
       </div>
     </div>
 
@@ -1082,7 +1082,7 @@ footer { padding:40px 48px; display:flex; justify-content:space-between; align-i
       <span class="tl-check">done</span>
       <div class="tl-body">
         <div class="tl-title">FreeRTOS V10.5.1: two-task architecture</div>
-        <p class="tl-desc">ARM_CM4F port. FPU context enabled before vTaskStartScheduler (CPACR write). task_sensor (priority 2) + task_uart (priority 1) communicate via depth-1 queue. IWDG 4&nbsp;s timeout kicked every 500&nbsp;ms. Full CMSIS migration eliminates all raw hex addresses. Hardware verified: 25.3&nbsp;°C, IR ~87&thinsp;000, BPM&nbsp;119 stable 50+ rows. Zero watchdog resets. 15 host-gcc unit tests added for filter.c and bpm.c.</p>
+        <p class="tl-desc">ARM_CM4F port. FPU context enabled before vTaskStartScheduler (CPACR write). task_sensor (priority 2) + task_uart (priority 1) communicate via depth-1 queue. IWDG 4&nbsp;s timeout kicked every 500&nbsp;ms. Full CMSIS migration eliminates all raw hex addresses. Hardware verified April 2026 (LED 0x10/3.2&nbsp;mA): 25.3&nbsp;°C, IR ~87&thinsp;000, BPM&nbsp;119. May 2026 re-run (LED 0x3F/12.6&nbsp;mA): IR ~196&thinsp;000, BPM 64-97. Zero watchdog resets. 15 host-gcc unit tests added for filter.c and bpm.c.</p>
       </div>
     </div>
   </div>

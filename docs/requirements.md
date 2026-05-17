@@ -77,7 +77,7 @@ breakout (I2C 0x57) - shared I2C1 bus on PB8/PB9.
 | REQ-MAX-04 | The firmware shall configure the MAX30102 FIFO with 4-sample averaging, rollover enabled, and almost-full threshold 15: FIFO_CONFIG (0x08) = `0x5F`. |
 | REQ-MAX-05 | The firmware shall configure MAX30102 in heart rate mode (red LED only): MODE (0x09) = `0x02`. |
 | REQ-MAX-06 | The firmware shall configure MAX30102 at 100 samples/second with 411 us pulse width: SpO2 config (0x0A) = `0x27`. |
-| REQ-MAX-07 | The red LED current shall be set to 3.2 mA: LED1_PA (0x0C) = `0x10`. |
+| REQ-MAX-07 | The red LED current shall be set to 12.6 mA: LED1_PA (0x0C) = `0x3F`. |
 | REQ-MAX-08 | The FIFO write pointer (0x04), overflow counter (0x05), and read pointer (0x06) shall be reset to 0 after configuration. |
 | REQ-MAX-09 | On each measurement cycle, the firmware shall read 3 bytes from the FIFO data register (0x07) and reconstruct a 32-bit value (MSB first: byte0 << 16 | byte1 << 8 | byte2). |
 | REQ-MAX-10 | Raw PPG values shall be masked to 18-bit resolution: `result & 0x3FFFF`, per the MAX30102 datasheet. |
@@ -100,7 +100,7 @@ breakout (I2C 0x57) - shared I2C1 bus on PB8/PB9.
 | REQ-BPM-01 | BPM detection shall operate on filtered AC PPG values from filter.c, not raw sensor values. |
 | REQ-BPM-02 | The dynamic threshold shall be computed as the midpoint of a rolling min/max window over the last BPM_HISTORY (25) filtered samples. |
 | REQ-BPM-03 | A valid beat shall be a Schmitt-trigger rising-edge crossing: signal must first fall below the lower band and then rise above the upper band. |
-| REQ-BPM-04 | Consecutive crossings within BPM_REFRACTORY_MS (333 ms) shall be rejected. |
+| REQ-BPM-04 | Consecutive crossings within BPM_REFRACTORY_MS (600 ms) shall be rejected. |
 | REQ-BPM-05 | BPM shall be computed as 60000 / interval_ms from the most recent valid crossing pair. `bpm_get()` shall return BPM_INVALID until at least two valid crossings are recorded. |
 
 ### 2.8 FreeRTOS Task Architecture

@@ -1,5 +1,7 @@
 # STM32 Vitals Monitor
 
+![Hardware setup - STM32L476RG Nucleo with TMP117 and MAX30102 on shared I2C bus](results/hardware_setup.png)
+
 Bare-metal firmware on STM32L476RG. No HAL. No CubeMX-generated peripheral init. All peripheral drivers written from RM0351 using CMSIS device headers (`stm32l476xx.h`). `syscalls.c` and `sysmem.c` are IDE-generated newlib stubs, retained unchanged.
 
 TMP117 temperature + MAX30102 red PPG/BPM on a shared I2C bus. Moving average filter on the AC PPG signal. BPM detection from dynamic-threshold crossings. IWDG watchdog with LSI oscillator. FreeRTOS V10.5.1 two-task scheduler. 3-layer architecture (application / processing / driver). MISRA-C analysed with Cppcheck. IEC 62304-style requirements traceability in source.
@@ -52,6 +54,8 @@ Rules: application never touches registers. Driver never calls application. No h
 - AEDIKO MAX30102 breakout - I2C address 0x57
 
 Both sensors share I2C1 on PB8 (SCL) / PB9 (SDA) via breadboard rails.
+
+![Hardware setup - STM32L476RG Nucleo with TMP117 and MAX30102 on shared I2C bus](results/hardware_setup.png)
 
 ---
 

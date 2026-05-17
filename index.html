@@ -568,7 +568,7 @@ footer { padding:40px 48px; display:flex; justify-content:space-between; align-i
     <h1>STM32<br><span class="accent">Vitals</span><br>Monitor</h1>
 
     <p class="hero-desc">
-      Bare-metal firmware on STM32L476RG, Cortex-M4F. No HAL, no CubeMX. Every peripheral driver is hand-written in register-level C through CMSIS structs. FreeRTOS V10.5.1, two tasks, one depth-1 queue, IWDG watchdog. 79 commits across four phases. Verified on hardware: BPM&nbsp;64-97 (resting adult), 25.6&nbsp;°C on TMP117, zero IWDG resets over a 5-minute continuous run.
+      Bare-metal firmware on STM32L476RG, Cortex-M4F. No HAL, no CubeMX. Every peripheral driver is hand-written in register-level C through CMSIS structs. FreeRTOS V10.5.1, two tasks, one depth-1 queue, IWDG watchdog. 81 commits across four phases. Verified on hardware: BPM&nbsp;64-97 (resting adult), 25.6&nbsp;°C on TMP117, zero IWDG resets over a 5-minute continuous run.
     </p>
 
     <div class="verify-strip">
@@ -777,7 +777,7 @@ footer { padding:40px 48px; display:flex; justify-content:space-between; align-i
         <div class="bug-fields">
           <div class="bf"><span class="bf-key">Symptom</span><span class="bf-val">None at <code>configTICK_RATE_HZ=1000</code>. Would produce wrong peak rejection at any other tick rate.</span></div>
           <div class="bf"><span class="bf-key">Root cause</span><span class="bf-val"><code>refractory_ticks = 333</code> happened to equal 333&nbsp;ms only because the tick rate was 1000&nbsp;Hz. The constant was treated as milliseconds without conversion.</span></div>
-          <div class="bf"><span class="bf-key">Fix</span><span class="bf-val"><code>pdMS_TO_TICKS(333)</code>. Correct at any tick rate.</span></div>
+          <div class="bf"><span class="bf-key">Fix</span><span class="bf-val"><code>pdMS_TO_TICKS(333)</code> corrected the unit conversion. <code>BPM_REFRACTORY_MS</code> was subsequently increased to 600&nbsp;ms; current firmware uses <code>pdMS_TO_TICKS(600U)</code>.</span></div>
           <div class="bf"><span class="bf-key">Insight</span><span class="bf-val insight">Correct-by-coincidence is a latent bug. The code looked right, passed all tests, and would have failed silently on a different board configuration.</span></div>
         </div>
       </div>
@@ -962,7 +962,7 @@ footer { padding:40px 48px; display:flex; justify-content:space-between; align-i
       <h2>Four phases</h2>
     </div>
     <p class="section-note">
-      79 commits across four phases, March to May 2026. Each phase ends with a hardware verification run, not a checkbox. The commit history preserves the full prototype-to-RTOS evolution.
+      81 commits across four phases, March to May 2026. Each phase ends with a hardware verification run, not a checkbox. The commit history preserves the full prototype-to-RTOS evolution.
     </p>
   </div>
 

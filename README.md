@@ -146,9 +146,53 @@ See `docs/limitations.md` for the full list.
 
 ---
 
-## Development timeline
+## Debugging log
 
-Built April 4-9, 2026. Driver layer and two-sensor bring-up on April 4 (one evening, hardware debug included). FreeRTOS integration and the IWDG fix on April 7. Two-task split, CMSIS migration, and hardware validation on April 8-9.
+### IWDG write order reversed
+
+What broke: chip resets before first UART byte. Silent. No fault handler.
+
+We had the IWDG_KR sequence backwards. Spec says 0xCCCC (start) before 0x5555 (unlock). Inverted, LSI clock starts after the unlock window closes, PVU/RVU sync flags never clear, and the spin-loop `while(IWDG->SR != 0)` hangs forever on reset.
+
+GDB single-stepping at power-on showed the hang immediately.
+
+Fixed by correcting the sequence. LSI enable (RCC_CSR_LSION) and LSIRDY wait must come before all IWDG config. RM0351 section 34.3.
+
+---
+
+### USART2_BRR typed as CR3 address
+
+What broke: no UART output. BRR reads back zero every time we write it. Four hours.
+
+One hex digit: typed 0x4000440C (CR3) instead of 0x40004408 (BRR). Close enough to not crash - just silently wrong.
+
+GDB register dump showed CR3 changing, BRR not.
+
+Didn't just fix the digit. Migrated every peripheral to CMSIS struct access (`USART2->BRR` instead of raw pointers). Eliminated 26 MISRA Rule 11.4 findings in one commit.
+
+---
+
+### busy_delay_ms blocking FreeRTOS scheduler
+
+What broke: 150ms stall at startup, UART output jitter.
+
+`max30102.c` called `busy_delay_ms(150)` for sensor reset inside `task_sensor`. CPU spin inside a task holds the scheduler for the full duration.
+
+Traced the jitter back to the MAX30102 init call sequence.
+
+Swapped to `vTaskDelay(pdMS_TO_TICKS(150))`. Init moved into task body after `vTaskStartScheduler()` so `vTaskDelay` is valid.
+
+---
+
+### DC estimator tracking heartbeat instead of baseline
+
+What broke: BPM detector produced nothing. Raw PPG column looked clean. Filtered column tracked the pulse instead of stripping DC offset.
+
+`DC_SHIFT 3` = 320ms time constant - fast enough to follow the heartbeat itself. Kills the AC component BPM detection depends on.
+
+Compared raw vs filtered columns in UART output on hardware.
+
+Raised `DC_SHIFT` to 6 (2560ms). Slow enough to track DC drift only, not the pulse.
 
 ---
 
